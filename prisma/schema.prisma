@@ -1,0 +1,158 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum OrganizationType {
+  HOSPITAL
+  CLINIC
+  LAB
+  PHARMACY
+  OTHER
+}
+
+enum UserRole {
+  ADMIN
+  USER
+  VIEWER
+}
+
+enum ConnectorType {
+  FHIR_REST
+  HL7_V2
+  DICOM
+  CUSTOM
+}
+
+enum ConnectorStatus {
+  ACTIVE
+  INACTIVE
+  ERROR
+  PENDING
+}
+
+enum MessageDirection {
+  INBOUND
+  OUTBOUND
+}
+
+enum MessageStatus {
+  PENDING
+  PROCESSING
+  SUCCESS
+  FAILED
+  RETRY
+}
+
+model Organization {
+  id        String             @id @default(cuid())
+  name      String
+  cnpj      String?            @unique
+  type      OrganizationType
+  metadata  Json?
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt
+
+  users      User[]
+  connectors Connector[]
+
+  @@index([cnpj])
+}
+
+model User {
+  id             String   @id @default(cuid())
+  email          String   @unique
+  name           String?
+  role           UserRole @default(USER)
+  workosId       String?  @unique
+  organizationId String
+  metadata       Json?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([email])
+  @@index([organizationId])
+}
+
+model Connector {
+  id             String          @id @default(cuid())
+  name           String
+  type           ConnectorType
+  status         ConnectorStatus @default(PENDING)
+  organizationId String
+  config         Json            // Connector-specific configuration
+  credentials    Json?           // Encrypted credentials
+  metadata       Json?
+  lastSyncAt     DateTime?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  organization  Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  messages      Message[]
+  fhirResources FhirResource[]
+
+  @@index([organizationId])
+  @@index([status])
+}
+
+model Message {
+  id          String           @id @default(cuid())
+  connectorId String
+  direction   MessageDirection
+  status      MessageStatus    @default(PENDING)
+  payload     Json             // Raw message payload
+  headers     Json?            // Message headers/metadata
+  error       String?          // Error message if failed
+  retryCount  Int              @default(0)
+  processedAt DateTime?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  connector Connector @relation(fields: [connectorId], references: [id], onDelete: Cascade)
+
+  @@index([connectorId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model FhirResource {
+  id           String   @id @default(cuid())
+  connectorId  String
+  resourceType String   // FHIR resource type (Patient, Observation, etc.)
+  resourceId   String   // FHIR resource ID
+  data         Json     // Full FHIR resource as JSONB
+  version      Int      @default(1)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  connector Connector @relation(fields: [connectorId], references: [id], onDelete: Cascade)
+
+  @@unique([resourceType, resourceId])
+  @@index([connectorId])
+  @@index([resourceType])
+  @@index([createdAt])
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  action    String   // Action performed
+  resource  String   // Resource affected
+  details   Json?    // Additional details
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
+}
