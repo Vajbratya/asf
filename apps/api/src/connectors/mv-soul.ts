@@ -5,11 +5,11 @@
  * Supports both HL7 MLLP for ADT/ORM messages and XML integration for results.
  */
 
-import axios, { AxiosInstance } from "axios";
-import { XMLBuilder, XMLParser } from "fast-xml-parser";
-import { GenericHL7Connector } from "./generic-hl7.js";
-import type { MVSoulConfig, ConnectorMessage } from "../types/connector.js";
-import type { BaseConnectorConfig } from "./base.js";
+import axios, { AxiosInstance } from 'axios';
+import { XMLBuilder, XMLParser } from 'fast-xml-parser';
+import { GenericHL7Connector } from './generic-hl7.js';
+import type { MVSoulConfig, ConnectorMessage } from '../types/connector.js';
+import type { BaseConnectorConfig } from './base.js';
 
 interface MVSoulConnectorConfig extends BaseConnectorConfig {
   config: MVSoulConfig;
@@ -51,13 +51,13 @@ export class MVSoulConnector extends GenericHL7Connector {
     // Initialize XML parser/builder
     this.xmlParser = new XMLParser({
       ignoreAttributes: false,
-      attributeNamePrefix: "@_",
-      textNodeName: "#text",
+      attributeNamePrefix: '@_',
+      textNodeName: '#text',
     });
 
     this.xmlBuilder = new XMLBuilder({
       ignoreAttributes: false,
-      attributeNamePrefix: "@_",
+      attributeNamePrefix: '@_',
       format: true,
       suppressEmptyNode: true,
     });
@@ -68,14 +68,11 @@ export class MVSoulConnector extends GenericHL7Connector {
         baseURL: this.mvConfig.xmlEndpoint,
         timeout: this.hl7Config.timeout || 30000,
         headers: {
-          "Content-Type": "text/xml; charset=utf-8",
+          'Content-Type': 'text/xml; charset=utf-8',
         },
       });
 
-      this.logger.info(
-        { endpoint: this.mvConfig.xmlEndpoint },
-        "MV Soul XML client initialized",
-      );
+      this.logger.info({ endpoint: this.mvConfig.xmlEndpoint }, 'MV Soul XML client initialized');
     }
   }
 
@@ -83,9 +80,7 @@ export class MVSoulConnector extends GenericHL7Connector {
     super.validateConfig();
 
     if (this.mvConfig.enableResultsIntegration && !this.mvConfig.xmlEndpoint) {
-      this.logger.warn(
-        "Results integration enabled but no XML endpoint configured",
-      );
+      this.logger.warn('Results integration enabled but no XML endpoint configured');
     }
   }
 
@@ -94,29 +89,25 @@ export class MVSoulConnector extends GenericHL7Connector {
    */
   async sendResults(resultData: MVResultData): Promise<void> {
     if (!this.xmlClient) {
-      throw this.createError(
-        "MV Soul XML integration not configured",
-        "XML_NOT_CONFIGURED",
-        false,
-      );
+      throw this.createError('MV Soul XML integration not configured', 'XML_NOT_CONFIGURED', false);
     }
 
     try {
       this.logger.info(
         { visitId: resultData.visitId, resultCount: resultData.results.length },
-        "Sending results to MV Soul",
+        'Sending results to MV Soul'
       );
 
       // Build MV XML format
       const xml = this.buildMVXml(resultData);
 
       // Log XML for debugging
-      this.logger.debug({ xml }, "Generated MV XML");
+      this.logger.debug({ xml }, 'Generated MV XML');
 
       // Send to MV Soul
-      const response = await this.xmlClient.post("", xml, {
+      const response = await this.xmlClient.post('', xml, {
         headers: {
-          "Content-Type": "text/xml; charset=utf-8",
+          'Content-Type': 'text/xml; charset=utf-8',
         },
       });
 
@@ -127,52 +118,62 @@ export class MVSoulConnector extends GenericHL7Connector {
       if (responseData.error || responseData.erro) {
         throw this.createError(
           `MV Soul rejected results: ${responseData.error || responseData.erro}`,
-          "RESULTS_REJECTED",
+          'RESULTS_REJECTED',
           false,
-          { response: responseData },
+          { response: responseData }
         );
       }
 
       this.recordMessageSent();
-      this.logger.info(
-        { visitId: resultData.visitId },
-        "Results sent successfully",
-      );
+      this.logger.info({ visitId: resultData.visitId }, 'Results sent successfully');
     } catch (error) {
       this.recordError(error as Error);
       throw this.createError(
         `Failed to send results to MV Soul: ${(error as Error).message}`,
-        "XML_ERROR",
-        true,
+        'XML_ERROR',
+        true
       );
     }
+  }
+
+  /**
+   * Escape XML special characters to prevent injection
+   */
+  private escapeXml(str: string): string {
+    return str
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&apos;');
   }
 
   /**
    * Build MV Soul XML format for results
    */
   private buildMVXml(data: MVResultData): string {
+    // Escape all user-provided data to prevent XML injection
     const mvIntegration: any = {
       mv_integracao: {
-        "@_tipo": "RESULTADO",
-        "@_versao": "1.0",
+        '@_tipo': 'RESULTADO',
+        '@_versao': '1.0',
         atendimento: {
-          cd_atendimento: data.visitId,
-          cd_paciente: data.patientId,
+          cd_atendimento: this.escapeXml(data.visitId),
+          cd_paciente: this.escapeXml(data.patientId),
           resultados: {
             resultado: data.results.map((result) => ({
-              cd_exame: result.examCode,
-              nm_exame: result.examName,
-              dt_resultado: result.resultDate,
-              st_resultado: result.status,
+              cd_exame: this.escapeXml(result.examCode),
+              nm_exame: this.escapeXml(result.examName),
+              dt_resultado: this.escapeXml(result.resultDate),
+              st_resultado: this.escapeXml(result.status),
               itens: {
                 item: result.items.map((item) => ({
-                  cd_item: item.code,
-                  nm_item: item.name,
-                  vl_resultado: item.value,
-                  un_medida: item.unit || "",
-                  vl_referencia: item.referenceRange || "",
-                  sn_anormal: item.abnormalFlag || "N",
+                  cd_item: this.escapeXml(item.code),
+                  nm_item: this.escapeXml(item.name),
+                  vl_resultado: this.escapeXml(item.value),
+                  un_medida: this.escapeXml(item.unit || ''),
+                  vl_referencia: this.escapeXml(item.referenceRange || ''),
+                  sn_anormal: this.escapeXml(item.abnormalFlag || 'N'),
                 })),
               },
             })),
@@ -199,8 +200,8 @@ export class MVSoulConnector extends GenericHL7Connector {
       this.recordError(error as Error);
       throw this.createError(
         `Failed to parse MV Soul XML response: ${(error as Error).message}`,
-        "XML_PARSE_ERROR",
-        false,
+        'XML_PARSE_ERROR',
+        false
       );
     }
   }
@@ -210,32 +211,28 @@ export class MVSoulConnector extends GenericHL7Connector {
    */
   async queryPatientVisits(patientId: string): Promise<any> {
     if (!this.xmlClient) {
-      throw this.createError(
-        "MV Soul XML integration not configured",
-        "XML_NOT_CONFIGURED",
-        false,
-      );
+      throw this.createError('MV Soul XML integration not configured', 'XML_NOT_CONFIGURED', false);
     }
 
     try {
-      this.logger.debug({ patientId }, "Querying patient visits from MV Soul");
+      this.logger.debug({ patientId }, 'Querying patient visits from MV Soul');
 
-      const queryXml = this.buildQueryXml("ATENDIMENTOS", {
+      const queryXml = this.buildQueryXml('ATENDIMENTOS', {
         cd_paciente: patientId,
       });
 
-      const response = await this.xmlClient.post("", queryXml);
+      const response = await this.xmlClient.post('', queryXml);
       const data = this.xmlParser.parse(response.data);
 
-      this.logger.debug({ patientId }, "Patient visits retrieved");
+      this.logger.debug({ patientId }, 'Patient visits retrieved');
 
       return data;
     } catch (error) {
       this.recordError(error as Error);
       throw this.createError(
         `Failed to query patient visits: ${(error as Error).message}`,
-        "XML_ERROR",
-        true,
+        'XML_ERROR',
+        true
       );
     }
   }
@@ -243,15 +240,18 @@ export class MVSoulConnector extends GenericHL7Connector {
   /**
    * Build MV Soul query XML
    */
-  private buildQueryXml(
-    queryType: string,
-    params: Record<string, any>,
-  ): string {
+  private buildQueryXml(queryType: string, params: Record<string, any>): string {
+    // Escape all parameter values to prevent XML injection
+    const escapedParams: Record<string, any> = {};
+    for (const [key, value] of Object.entries(params)) {
+      escapedParams[key] = typeof value === 'string' ? this.escapeXml(value) : value;
+    }
+
     const mvQuery: any = {
       mv_integracao: {
-        "@_tipo": "CONSULTA",
-        "@_consulta": queryType,
-        parametros: params,
+        '@_tipo': 'CONSULTA',
+        '@_consulta': this.escapeXml(queryType),
+        parametros: escapedParams,
       },
     };
 
@@ -264,11 +264,11 @@ export class MVSoulConnector extends GenericHL7Connector {
    */
   async sendAdtMessage(message: ConnectorMessage): Promise<void> {
     // Ensure message type is ADT
-    if (!message.type.startsWith("ADT")) {
+    if (!message.type.startsWith('ADT')) {
       throw this.createError(
-        "Invalid message type for ADT. Expected ADT^A01, ADT^A02, etc.",
-        "INVALID_MESSAGE_TYPE",
-        false,
+        'Invalid message type for ADT. Expected ADT^A01, ADT^A02, etc.',
+        'INVALID_MESSAGE_TYPE',
+        false
       );
     }
 
@@ -281,11 +281,11 @@ export class MVSoulConnector extends GenericHL7Connector {
    */
   async sendOrderMessage(message: ConnectorMessage): Promise<void> {
     // Ensure message type is ORM
-    if (!message.type.startsWith("ORM")) {
+    if (!message.type.startsWith('ORM')) {
       throw this.createError(
-        "Invalid message type for Order. Expected ORM^O01",
-        "INVALID_MESSAGE_TYPE",
-        false,
+        'Invalid message type for Order. Expected ORM^O01',
+        'INVALID_MESSAGE_TYPE',
+        false
       );
     }
 
@@ -301,8 +301,8 @@ export class MVSoulConnector extends GenericHL7Connector {
     // and would handle different source formats
 
     const mvData: MVResultData = {
-      visitId: sourceData.visitId || sourceData.visit_id || "",
-      patientId: sourceData.patientId || sourceData.patient_id || "",
+      visitId: sourceData.visitId || sourceData.visit_id || '',
+      patientId: sourceData.patientId || sourceData.patient_id || '',
       results: [],
     };
 
@@ -311,14 +311,11 @@ export class MVSoulConnector extends GenericHL7Connector {
       const results = sourceData.results || sourceData.exams;
 
       mvData.results = results.map((result: any) => ({
-        examCode: result.code || result.exam_code || "",
-        examName: result.name || result.exam_name || "",
-        resultDate:
-          result.date || result.result_date || new Date().toISOString(),
-        status: result.status || "F", // F = Final
-        items: this.transformResultItems(
-          result.items || result.observations || [],
-        ),
+        examCode: result.code || result.exam_code || '',
+        examName: result.name || result.exam_name || '',
+        resultDate: result.date || result.result_date || new Date().toISOString(),
+        status: result.status || 'F', // F = Final
+        items: this.transformResultItems(result.items || result.observations || []),
       }));
     }
 
@@ -330,12 +327,12 @@ export class MVSoulConnector extends GenericHL7Connector {
    */
   private transformResultItems(items: any[]): MVResultItem[] {
     return items.map((item: any) => ({
-      code: item.code || item.observation_code || "",
-      name: item.name || item.observation_name || "",
-      value: item.value?.toString() || "",
+      code: item.code || item.observation_code || '',
+      name: item.name || item.observation_name || '',
+      value: item.value?.toString() || '',
       unit: item.unit || item.units || undefined,
       referenceRange: item.referenceRange || item.reference_range || undefined,
-      abnormalFlag: item.abnormal || item.abnormal_flag || "N",
+      abnormalFlag: item.abnormal || item.abnormal_flag || 'N',
     }));
   }
 
@@ -343,10 +340,10 @@ export class MVSoulConnector extends GenericHL7Connector {
    * Build custom XML for MV Soul (when xmlFormat is 'custom')
    */
   buildCustomXml(data: any): string {
-    if (this.mvConfig.xmlFormat === "custom") {
+    if (this.mvConfig.xmlFormat === 'custom') {
       // Allow custom XML building logic
       // This can be extended based on specific MV Soul customizations
-      this.logger.debug("Building custom MV Soul XML format");
+      this.logger.debug('Building custom MV Soul XML format');
     }
 
     // Default to standard format
@@ -362,7 +359,7 @@ export class MVSoulConnector extends GenericHL7Connector {
       return false;
     }
 
-    if (response.status === "error" || response.status === "erro") {
+    if (response.status === 'error' || response.status === 'erro') {
       return false;
     }
 

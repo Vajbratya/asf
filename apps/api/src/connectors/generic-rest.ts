@@ -5,14 +5,14 @@
  * and request/response transformations.
  */
 
-import axios, { AxiosInstance, AxiosRequestConfig, Method } from "axios";
-import { BaseConnector, BaseConnectorConfig } from "./base.js";
+import axios, { AxiosInstance, AxiosRequestConfig, Method } from 'axios';
+import { BaseConnector, BaseConnectorConfig } from './base.js';
 import type {
   GenericRestConfig,
   RestAuthConfig,
   RestEndpointConfig,
   ConnectorMessage,
-} from "../types/connector.js";
+} from '../types/connector.js';
 
 interface GenericRestConnectorConfig extends BaseConnectorConfig {
   config: GenericRestConfig;
@@ -31,6 +31,7 @@ export class GenericRestConnector extends BaseConnector {
   private restConfig: GenericRestConfig;
   private httpClient: AxiosInstance;
   private oauth2Token?: OAuth2Token;
+  private tokenRefreshPromise: Promise<void> | null = null;
 
   constructor(config: GenericRestConnectorConfig) {
     super(config);
@@ -39,10 +40,7 @@ export class GenericRestConnector extends BaseConnector {
     // Create HTTP client
     this.httpClient = this.createHttpClient();
 
-    this.logger.info(
-      { baseUrl: this.restConfig.baseUrl },
-      "Generic REST connector initialized",
-    );
+    this.logger.info({ baseUrl: this.restConfig.baseUrl }, 'Generic REST connector initialized');
   }
 
   private createHttpClient(): AxiosInstance {
@@ -50,8 +48,8 @@ export class GenericRestConnector extends BaseConnector {
       baseURL: this.restConfig.baseUrl,
       timeout: this.restConfig.defaultTimeout || 30000,
       headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
       },
     });
 
@@ -63,7 +61,7 @@ export class GenericRestConnector extends BaseConnector {
       },
       (error) => {
         return Promise.reject(error);
-      },
+      }
     );
 
     // Add response interceptor for error handling
@@ -73,7 +71,7 @@ export class GenericRestConnector extends BaseConnector {
         // Handle OAuth2 token refresh on 401
         if (
           error.response?.status === 401 &&
-          this.restConfig.auth.type === "oauth2" &&
+          this.restConfig.auth.type === 'oauth2' &&
           this.oauth2Token?.refresh_token
         ) {
           try {
@@ -85,7 +83,7 @@ export class GenericRestConnector extends BaseConnector {
           }
         }
         return Promise.reject(error);
-      },
+      }
     );
 
     return client;
@@ -95,52 +93,46 @@ export class GenericRestConnector extends BaseConnector {
     super.validateConfig();
 
     if (!this.restConfig.baseUrl) {
-      throw this.createError("Base URL is required", "INVALID_CONFIG", false);
+      throw this.createError('Base URL is required', 'INVALID_CONFIG', false);
     }
 
     if (!this.restConfig.auth) {
-      throw this.createError(
-        "Authentication configuration is required",
-        "INVALID_CONFIG",
-        false,
-      );
+      throw this.createError('Authentication configuration is required', 'INVALID_CONFIG', false);
     }
   }
 
   async connect(): Promise<void> {
-    this.setStatus("connecting");
-    this.logger.info(
-      { baseUrl: this.restConfig.baseUrl },
-      "Connecting to REST API",
-    );
+    this.setStatus('connecting');
+    this.logger.info({ baseUrl: this.restConfig.baseUrl }, 'Connecting to REST API');
 
     try {
       // For OAuth2, get initial token
-      if (this.restConfig.auth.type === "oauth2") {
+      if (this.restConfig.auth.type === 'oauth2') {
         await this.getOAuth2Token();
       }
 
       // Test connection with a simple request
       await this.testConnection();
 
-      this.setStatus("connected");
-      this.logger.info("Connected to REST API");
+      this.setStatus('connected');
+      this.logger.info('Connected to REST API');
     } catch (error) {
-      this.setStatus("error");
+      this.setStatus('error');
       this.recordError(error as Error);
       throw this.createError(
         `Failed to connect to REST API: ${(error as Error).message}`,
-        "CONNECTION_FAILED",
-        true,
+        'CONNECTION_FAILED',
+        true
       );
     }
   }
 
   async disconnect(): Promise<void> {
-    this.logger.info("Disconnecting from REST API");
+    this.logger.info('Disconnecting from REST API');
     this.oauth2Token = undefined;
-    this.setStatus("disconnected");
-    this.logger.info("Disconnected from REST API");
+    this.tokenRefreshPromise = null;
+    this.setStatus('disconnected');
+    this.logger.info('Disconnected from REST API');
   }
 
   async send(message: ConnectorMessage): Promise<void> {
@@ -152,16 +144,13 @@ export class GenericRestConnector extends BaseConnector {
       if (!endpointConfig) {
         throw this.createError(
           `No endpoint configuration found for message type: ${message.type}`,
-          "ENDPOINT_NOT_FOUND",
-          false,
+          'ENDPOINT_NOT_FOUND',
+          false
         );
       }
 
       // Transform request if configured
-      const transformedPayload = this.transformRequest(
-        message.payload,
-        endpointConfig,
-      );
+      const transformedPayload = this.transformRequest(message.payload, endpointConfig);
 
       // Build request config
       const requestConfig: AxiosRequestConfig = {
@@ -175,14 +164,11 @@ export class GenericRestConnector extends BaseConnector {
       // Send request with retry
       const response = await this.retry(
         () => this.httpClient.request(requestConfig),
-        `send-${message.type}`,
+        `send-${message.type}`
       );
 
       // Transform response if configured
-      const transformedResponse = this.transformResponse(
-        response.data,
-        endpointConfig,
-      );
+      const transformedResponse = this.transformResponse(response.data, endpointConfig);
 
       this.recordMessageSent();
       this.recordLatency(Date.now() - startTime);
@@ -193,11 +179,11 @@ export class GenericRestConnector extends BaseConnector {
           endpoint: endpointConfig.url,
           latency: Date.now() - startTime,
         },
-        "REST request sent successfully",
+        'REST request sent successfully'
       );
 
       // Emit response event
-      this.emit("response", {
+      this.emit('response', {
         messageId: message.id,
         data: transformedResponse,
       });
@@ -213,15 +199,11 @@ export class GenericRestConnector extends BaseConnector {
   async request(
     endpointName: string,
     params?: any,
-    options?: Partial<RestEndpointConfig>,
+    options?: Partial<RestEndpointConfig>
   ): Promise<any> {
     const endpointConfig = this.restConfig.endpoints[endpointName];
     if (!endpointConfig) {
-      throw this.createError(
-        `Endpoint not found: ${endpointName}`,
-        "ENDPOINT_NOT_FOUND",
-        false,
-      );
+      throw this.createError(`Endpoint not found: ${endpointName}`, 'ENDPOINT_NOT_FOUND', false);
     }
 
     // Merge with options
@@ -229,7 +211,7 @@ export class GenericRestConnector extends BaseConnector {
 
     // Build URL with params
     let url = config.url;
-    if (params && config.method === "GET") {
+    if (params && config.method === 'GET') {
       const query = new URLSearchParams(params).toString();
       url = `${url}?${query}`;
     }
@@ -237,14 +219,14 @@ export class GenericRestConnector extends BaseConnector {
     const requestConfig: AxiosRequestConfig = {
       url,
       method: config.method as Method,
-      data: params && config.method !== "GET" ? params : undefined,
+      data: params && config.method !== 'GET' ? params : undefined,
       headers: config.headers || {},
       timeout: config.timeout || this.restConfig.defaultTimeout,
     };
 
     const response = await this.retry(
       () => this.httpClient.request(requestConfig),
-      `request-${endpointName}`,
+      `request-${endpointName}`
     );
 
     return this.transformResponse(response.data, config);
@@ -257,41 +239,69 @@ export class GenericRestConnector extends BaseConnector {
     const auth = this.restConfig.auth;
 
     switch (auth.type) {
-      case "apikey":
+      case 'apikey':
         if (auth.apiKey) {
           config.headers = config.headers || {};
           config.headers[auth.apiKey.header] = auth.apiKey.value;
         }
         break;
 
-      case "basic":
+      case 'basic':
         if (auth.basic) {
-          const token = Buffer.from(
-            `${auth.basic.username}:${auth.basic.password}`,
-          ).toString("base64");
+          const token = Buffer.from(`${auth.basic.username}:${auth.basic.password}`).toString(
+            'base64'
+          );
           config.headers = config.headers || {};
           config.headers.Authorization = `Basic ${token}`;
         }
         break;
 
-      case "bearer":
+      case 'bearer':
         if (auth.bearer) {
           config.headers = config.headers || {};
           config.headers.Authorization = `Bearer ${auth.bearer.token}`;
         }
         break;
 
-      case "oauth2":
+      case 'oauth2':
         if (this.oauth2Token) {
-          // Check if token is expired
-          if (this.isTokenExpired()) {
-            await this.refreshOAuth2Token();
-          }
+          // Check if token is expired and refresh if needed
+          const token = await this.getToken();
           config.headers = config.headers || {};
-          config.headers.Authorization = `${this.oauth2Token.token_type} ${this.oauth2Token.access_token}`;
+          config.headers.Authorization = `${this.oauth2Token.token_type} ${token}`;
         }
         break;
     }
+  }
+
+  /**
+   * Get valid OAuth2 token (handles race conditions)
+   */
+  private async getToken(): Promise<string> {
+    if (this.isTokenValid()) {
+      return this.oauth2Token!.access_token;
+    }
+
+    // If refresh is already in progress, wait for it
+    if (!this.tokenRefreshPromise) {
+      this.tokenRefreshPromise = this.refreshOAuth2Token().finally(() => {
+        this.tokenRefreshPromise = null;
+      });
+    }
+
+    await this.tokenRefreshPromise;
+    return this.oauth2Token!.access_token;
+  }
+
+  /**
+   * Check if token is valid (not expired)
+   */
+  private isTokenValid(): boolean {
+    if (!this.oauth2Token || !this.oauth2Token.expires_at) {
+      return false;
+    }
+    // Consider token valid if it has more than 1 minute left
+    return Date.now() < this.oauth2Token.expires_at - 60000;
   }
 
   /**
@@ -300,41 +310,36 @@ export class GenericRestConnector extends BaseConnector {
   private async getOAuth2Token(): Promise<void> {
     const oauth2 = this.restConfig.auth.oauth2;
     if (!oauth2) {
-      throw this.createError(
-        "OAuth2 configuration not found",
-        "INVALID_CONFIG",
-        false,
-      );
+      throw this.createError('OAuth2 configuration not found', 'INVALID_CONFIG', false);
     }
 
     try {
-      this.logger.debug("Getting OAuth2 token");
+      this.logger.debug('Getting OAuth2 token');
 
       const response = await axios.post(
         oauth2.tokenUrl,
         new URLSearchParams({
-          grant_type: "client_credentials",
+          grant_type: 'client_credentials',
           client_id: oauth2.clientId,
           client_secret: oauth2.clientSecret,
-          scope: oauth2.scope || "",
+          scope: oauth2.scope || '',
         }),
         {
           headers: {
-            "Content-Type": "application/x-www-form-urlencoded",
+            'Content-Type': 'application/x-www-form-urlencoded',
           },
-        },
+        }
       );
 
       this.oauth2Token = response.data;
-      this.oauth2Token!.expires_at =
-        Date.now() + response.data.expires_in * 1000;
+      this.oauth2Token!.expires_at = Date.now() + response.data.expires_in * 1000;
 
-      this.logger.debug("OAuth2 token acquired");
+      this.logger.debug('OAuth2 token acquired');
     } catch (error) {
       throw this.createError(
         `Failed to get OAuth2 token: ${(error as Error).message}`,
-        "AUTH_ERROR",
-        false,
+        'AUTH_ERROR',
+        false
       );
     }
   }
@@ -346,40 +351,39 @@ export class GenericRestConnector extends BaseConnector {
     const oauth2 = this.restConfig.auth.oauth2;
     if (!oauth2 || !this.oauth2Token?.refresh_token) {
       throw this.createError(
-        "Cannot refresh token: no refresh token available",
-        "AUTH_ERROR",
-        false,
+        'Cannot refresh token: no refresh token available',
+        'AUTH_ERROR',
+        false
       );
     }
 
     try {
-      this.logger.debug("Refreshing OAuth2 token");
+      this.logger.debug('Refreshing OAuth2 token');
 
       const response = await axios.post(
         oauth2.tokenUrl,
         new URLSearchParams({
-          grant_type: "refresh_token",
+          grant_type: 'refresh_token',
           refresh_token: this.oauth2Token.refresh_token,
           client_id: oauth2.clientId,
           client_secret: oauth2.clientSecret,
         }),
         {
           headers: {
-            "Content-Type": "application/x-www-form-urlencoded",
+            'Content-Type': 'application/x-www-form-urlencoded',
           },
-        },
+        }
       );
 
       this.oauth2Token = response.data;
-      this.oauth2Token!.expires_at =
-        Date.now() + response.data.expires_in * 1000;
+      this.oauth2Token!.expires_at = Date.now() + response.data.expires_in * 1000;
 
-      this.logger.debug("OAuth2 token refreshed");
+      this.logger.debug('OAuth2 token refreshed');
     } catch (error) {
       throw this.createError(
         `Failed to refresh OAuth2 token: ${(error as Error).message}`,
-        "AUTH_ERROR",
-        false,
+        'AUTH_ERROR',
+        false
       );
     }
   }
@@ -401,7 +405,7 @@ export class GenericRestConnector extends BaseConnector {
   private async testConnection(): Promise<void> {
     // Try to make a simple request to verify connectivity
     try {
-      await this.httpClient.get("/");
+      await this.httpClient.get('/');
     } catch (error) {
       // Ignore 404 errors - just testing connectivity
       if (axios.isAxiosError(error) && error.response?.status === 404) {
@@ -446,7 +450,7 @@ export class GenericRestConnector extends BaseConnector {
 
     // Extract specific field
     if (transform.extract) {
-      const fields = transform.extract.split(".");
+      const fields = transform.extract.split('.');
       let result = data;
       for (const field of fields) {
         result = result?.[field];
@@ -469,7 +473,7 @@ export class GenericRestConnector extends BaseConnector {
     const result: any = {};
 
     for (const [targetField, sourceField] of Object.entries(mapping)) {
-      const fields = sourceField.split(".");
+      const fields = sourceField.split('.');
       let value = data;
       for (const field of fields) {
         value = value?.[field];
@@ -491,12 +495,12 @@ export class GenericRestConnector extends BaseConnector {
     if (matches) {
       for (const match of matches) {
         const field = match.slice(1, -1);
-        const fields = field.split(".");
+        const fields = field.split('.');
         let value = data;
         for (const f of fields) {
           value = value?.[f];
         }
-        result = result.replace(match, String(value || ""));
+        result = result.replace(match, String(value || ''));
       }
     }
 
