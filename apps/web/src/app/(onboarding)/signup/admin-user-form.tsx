@@ -40,11 +40,11 @@ export function AdminUserForm({ onNext, onBack, initialData = {} }: AdminUserFor
     const newErrors: Record<string, string> = {};
 
     if (formData.password.length < 8) {
-      newErrors.password = 'Password must be at least 8 characters';
+      newErrors.password = 'A senha deve ter pelo menos 8 caracteres';
     }
 
     if (formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = 'Passwords do not match';
+      newErrors.confirmPassword = 'As senhas não coincidem';
     }
 
     setErrors(newErrors);
@@ -62,14 +62,14 @@ export function AdminUserForm({ onNext, onBack, initialData = {} }: AdminUserFor
     <form onSubmit={handleSubmit} className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Admin User</CardTitle>
+          <CardTitle>Usuário Administrador</CardTitle>
           <CardDescription>
-            Create the first administrator account for your organization
+            Crie a primeira conta de administrador para sua organização
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <Label htmlFor="name">Full Name *</Label>
+            <Label htmlFor="name">Nome Completo *</Label>
             <Input
               id="name"
               value={formData.name}
@@ -89,30 +89,30 @@ export function AdminUserForm({ onNext, onBack, initialData = {} }: AdminUserFor
               placeholder="maria.santos@hospital.com"
               required
             />
-            <p className="text-xs text-muted-foreground mt-1">You'll use this email to sign in</p>
+            <p className="text-xs text-muted-foreground mt-1">Você usará este email para entrar</p>
           </div>
 
           <div>
-            <Label htmlFor="password">Password *</Label>
+            <Label htmlFor="password">Senha *</Label>
             <Input
               id="password"
               type="password"
               value={formData.password}
               onChange={(e) => handleChange('password', e.target.value)}
-              placeholder="Enter a secure password"
+              placeholder="Digite uma senha segura"
               required
             />
             {errors.password && <p className="text-xs text-destructive mt-1">{errors.password}</p>}
           </div>
 
           <div>
-            <Label htmlFor="confirmPassword">Confirm Password *</Label>
+            <Label htmlFor="confirmPassword">Confirmar Senha *</Label>
             <Input
               id="confirmPassword"
               type="password"
               value={formData.confirmPassword}
               onChange={(e) => handleChange('confirmPassword', e.target.value)}
-              placeholder="Re-enter your password"
+              placeholder="Digite a senha novamente"
               required
             />
             {errors.confirmPassword && (
@@ -124,10 +124,10 @@ export function AdminUserForm({ onNext, onBack, initialData = {} }: AdminUserFor
 
       <div className="flex justify-between">
         <Button type="button" variant="outline" onClick={onBack}>
-          Back
+          Voltar
         </Button>
         <Button type="submit" size="lg">
-          Continue
+          Continuar
         </Button>
       </div>
     </form>

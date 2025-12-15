@@ -76,13 +76,13 @@ export function OrganizationForm({ onNext, initialData = {} }: OrganizationFormP
     <form onSubmit={handleSubmit} className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Organization Information</CardTitle>
-          <CardDescription>Tell us about your healthcare organization</CardDescription>
+          <CardTitle>Informações da Organização</CardTitle>
+          <CardDescription>Conte-nos sobre sua organização de saúde</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="col-span-2">
-              <Label htmlFor="name">Organization Name *</Label>
+              <Label htmlFor="name">Nome da Organização *</Label>
               <Input
                 id="name"
                 value={formData.name}
@@ -93,7 +93,7 @@ export function OrganizationForm({ onNext, initialData = {} }: OrganizationFormP
             </div>
 
             <div className="col-span-2">
-              <Label htmlFor="slug">Slug *</Label>
+              <Label htmlFor="slug">Identificador *</Label>
               <Input
                 id="slug"
                 value={formData.slug}
@@ -102,22 +102,22 @@ export function OrganizationForm({ onNext, initialData = {} }: OrganizationFormP
                 required
               />
               <p className="text-xs text-muted-foreground mt-1">
-                This will be part of your organization URL
+                Este será parte da URL da sua organização
               </p>
             </div>
 
             <div>
-              <Label htmlFor="type">Organization Type *</Label>
+              <Label htmlFor="type">Tipo de Organização *</Label>
               <Select value={formData.type} onValueChange={(value) => handleChange('type', value)}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="HOSPITAL">Hospital</SelectItem>
-                  <SelectItem value="CLINIC">Clinic</SelectItem>
-                  <SelectItem value="LAB">Laboratory</SelectItem>
-                  <SelectItem value="PHARMACY">Pharmacy</SelectItem>
-                  <SelectItem value="OTHER">Other</SelectItem>
+                  <SelectItem value="CLINIC">Clínica</SelectItem>
+                  <SelectItem value="LAB">Laboratório</SelectItem>
+                  <SelectItem value="PHARMACY">Farmácia</SelectItem>
+                  <SelectItem value="OTHER">Outro</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -131,7 +131,9 @@ export function OrganizationForm({ onNext, initialData = {} }: OrganizationFormP
                 placeholder="1234567"
                 required
               />
-              <p className="text-xs text-muted-foreground mt-1">Brazilian hospital registration</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Cadastro Nacional de Estabelecimentos de Saúde
+              </p>
             </div>
 
             <div className="col-span-2">
@@ -150,12 +152,12 @@ export function OrganizationForm({ onNext, initialData = {} }: OrganizationFormP
 
       <Card>
         <CardHeader>
-          <CardTitle>Address</CardTitle>
+          <CardTitle>Endereço</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="col-span-2">
-              <Label htmlFor="addressStreet">Street Address *</Label>
+              <Label htmlFor="addressStreet">Endereço *</Label>
               <Input
                 id="addressStreet"
                 value={formData.addressStreet}
@@ -166,7 +168,7 @@ export function OrganizationForm({ onNext, initialData = {} }: OrganizationFormP
             </div>
 
             <div>
-              <Label htmlFor="addressCity">City *</Label>
+              <Label htmlFor="addressCity">Cidade *</Label>
               <Input
                 id="addressCity"
                 value={formData.addressCity}
@@ -177,7 +179,7 @@ export function OrganizationForm({ onNext, initialData = {} }: OrganizationFormP
             </div>
 
             <div>
-              <Label htmlFor="addressState">State *</Label>
+              <Label htmlFor="addressState">Estado *</Label>
               <Input
                 id="addressState"
                 value={formData.addressState}
@@ -189,7 +191,7 @@ export function OrganizationForm({ onNext, initialData = {} }: OrganizationFormP
             </div>
 
             <div className="col-span-2">
-              <Label htmlFor="addressZipCode">ZIP Code *</Label>
+              <Label htmlFor="addressZipCode">CEP *</Label>
               <Input
                 id="addressZipCode"
                 value={formData.addressZipCode}
@@ -204,11 +206,11 @@ export function OrganizationForm({ onNext, initialData = {} }: OrganizationFormP
 
       <Card>
         <CardHeader>
-          <CardTitle>Contact Information</CardTitle>
+          <CardTitle>Informações de Contato</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <Label htmlFor="billingEmail">Billing Email *</Label>
+            <Label htmlFor="billingEmail">Email de Cobrança *</Label>
             <Input
               id="billingEmail"
               type="email"
@@ -220,10 +222,10 @@ export function OrganizationForm({ onNext, initialData = {} }: OrganizationFormP
           </div>
 
           <div className="pt-4 border-t">
-            <h4 className="font-semibold mb-4">Technical Contact</h4>
+            <h4 className="font-semibold mb-4">Contato Técnico</h4>
             <div className="space-y-4">
               <div>
-                <Label htmlFor="technicalContactName">Name *</Label>
+                <Label htmlFor="technicalContactName">Nome *</Label>
                 <Input
                   id="technicalContactName"
                   value={formData.technicalContactName}
@@ -246,7 +248,7 @@ export function OrganizationForm({ onNext, initialData = {} }: OrganizationFormP
               </div>
 
               <div>
-                <Label htmlFor="technicalContactPhone">Phone *</Label>
+                <Label htmlFor="technicalContactPhone">Telefone *</Label>
                 <Input
                   id="technicalContactPhone"
                   type="tel"
@@ -263,7 +265,7 @@ export function OrganizationForm({ onNext, initialData = {} }: OrganizationFormP
 
       <div className="flex justify-end">
         <Button type="submit" size="lg">
-          Continue
+          Continuar
         </Button>
       </div>
     </form>

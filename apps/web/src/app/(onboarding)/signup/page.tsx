@@ -25,9 +25,9 @@ export default function SignupPage() {
     <div className="min-h-screen bg-background">
       <div className="container max-w-4xl mx-auto py-12 px-4">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold tracking-tight">Create Your Account</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Criar Sua Conta</h1>
           <p className="text-muted-foreground mt-2">
-            Get started with IntegraSaúde in just a few steps
+            Comece a usar o IntegraSaude em poucos passos
           </p>
         </div>
 

@@ -1,8 +1,8 @@
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Changelog | IntegraSaude',
-  description: 'Historico de atualizacoes da plataforma IntegraSaude.',
+  title: 'Changelog | IntegraSaúde',
+  description: 'Histórico de atualizações da plataforma IntegraSaúde.',
 };
 
 export default function ChangelogPage() {
@@ -10,7 +10,7 @@ export default function ChangelogPage() {
     {
       version: '1.2.0',
       date: '15 Dez 2025',
-      changes: ['Novo design system', 'Paginas de documentacao', 'Melhorias de performance'],
+      changes: ['Novo design system', 'Páginas de documentação', 'Melhorias de performance'],
     },
     {
       version: '1.1.0',
@@ -20,7 +20,7 @@ export default function ChangelogPage() {
     {
       version: '1.0.0',
       date: '15 Nov 2025',
-      changes: ['Lancamento inicial', 'Suporte a Tasy e MV Soul', 'Parser HL7 v2'],
+      changes: ['Lançamento inicial', 'Suporte a Tasy e MV Soul', 'Parser HL7 v2'],
     },
   ];
 
@@ -29,7 +29,7 @@ export default function ChangelogPage() {
       <section className="py-16 bg-[#FAFAFA] border-b border-[#E5E5E5]">
         <div className="max-w-4xl mx-auto px-4 md:px-6">
           <h1 className="text-4xl font-semibold text-[#1A1A1A] mb-4">Changelog</h1>
-          <p className="text-lg text-[#1A1A1A]/60">Historico de atualizacoes e novidades.</p>
+          <p className="text-lg text-[#1A1A1A]/60">Histórico de atualizações e novidades.</p>
         </div>
       </section>
       <section className="py-16">

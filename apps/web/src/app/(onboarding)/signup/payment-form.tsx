@@ -66,14 +66,14 @@ export function PaymentForm({ onNext, onBack, initialData = {}, formData }: Paym
     <form onSubmit={handleSubmit} className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Payment Information</CardTitle>
+          <CardTitle>Informações de Pagamento</CardTitle>
           <CardDescription>
-            Enter your payment details or start with a free 14-day trial
+            Insira seus dados de pagamento ou comece com 14 dias grátis
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <Label htmlFor="cardName">Cardholder Name</Label>
+            <Label htmlFor="cardName">Nome no Cartão</Label>
             <Input
               id="cardName"
               value={paymentData.cardName}
@@ -83,7 +83,7 @@ export function PaymentForm({ onNext, onBack, initialData = {}, formData }: Paym
           </div>
 
           <div>
-            <Label htmlFor="cardNumber">Card Number</Label>
+            <Label htmlFor="cardNumber">Número do Cartão</Label>
             <Input
               id="cardNumber"
               value={paymentData.cardNumber}
@@ -95,12 +95,12 @@ export function PaymentForm({ onNext, onBack, initialData = {}, formData }: Paym
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="expiryDate">Expiry Date</Label>
+              <Label htmlFor="expiryDate">Validade</Label>
               <Input
                 id="expiryDate"
                 value={paymentData.expiryDate}
                 onChange={(e) => handleChange('expiryDate', e.target.value)}
-                placeholder="MM/YY"
+                placeholder="MM/AA"
                 maxLength={5}
               />
             </div>
@@ -120,8 +120,8 @@ export function PaymentForm({ onNext, onBack, initialData = {}, formData }: Paym
 
           <div className="pt-4 border-t">
             <p className="text-sm text-muted-foreground">
-              You won't be charged during your 14-day trial. Cancel anytime before the trial ends to
-              avoid charges.
+              Você não será cobrado durante os 14 dias de teste. Cancele a qualquer momento antes do
+              fim do período para evitar cobranças.
             </p>
           </div>
         </CardContent>
@@ -129,14 +129,14 @@ export function PaymentForm({ onNext, onBack, initialData = {}, formData }: Paym
 
       <div className="flex justify-between">
         <Button type="button" variant="outline" onClick={onBack}>
-          Back
+          Voltar
         </Button>
         <div className="flex gap-2">
           <Button type="button" variant="outline" onClick={handleSkipTrial}>
-            Start Free Trial
+            Iniciar Teste Grátis
           </Button>
           <Button type="submit" size="lg" disabled={loading}>
-            {loading ? 'Processing...' : 'Complete Setup'}
+            {loading ? 'Processando...' : 'Finalizar Cadastro'}
           </Button>
         </div>
       </div>

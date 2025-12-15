@@ -50,13 +50,13 @@ export function SetupComplete({ formData }: SetupCompleteProps) {
       </div>
 
       <div>
-        <h2 className="text-3xl font-bold">Welcome to IntegraSaúde!</h2>
-        <p className="text-muted-foreground mt-2">Your account has been created successfully</p>
+        <h2 className="text-3xl font-bold">Bem-vindo ao IntegraSaúde!</h2>
+        <p className="text-muted-foreground mt-2">Sua conta foi criada com sucesso</p>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Next Steps</CardTitle>
+          <CardTitle>Próximos Passos</CardTitle>
         </CardHeader>
         <CardContent className="text-left space-y-4">
           <div className="flex gap-3">
@@ -64,9 +64,9 @@ export function SetupComplete({ formData }: SetupCompleteProps) {
               1
             </div>
             <div>
-              <h4 className="font-semibold">Connect Your Hospital System</h4>
+              <h4 className="font-semibold">Conecte Seu Sistema Hospitalar</h4>
               <p className="text-sm text-muted-foreground">
-                Set up your first connector to start receiving messages
+                Configure seu primeiro conector para começar a receber mensagens
               </p>
             </div>
           </div>
@@ -76,9 +76,9 @@ export function SetupComplete({ formData }: SetupCompleteProps) {
               2
             </div>
             <div>
-              <h4 className="font-semibold">Test Your Connection</h4>
+              <h4 className="font-semibold">Teste Sua Conexão</h4>
               <p className="text-sm text-muted-foreground">
-                Send a test message to verify everything is working
+                Envie uma mensagem de teste para verificar se tudo está funcionando
               </p>
             </div>
           </div>
@@ -90,7 +90,7 @@ export function SetupComplete({ formData }: SetupCompleteProps) {
             <div>
               <h4 className="font-semibold">Configure Webhooks</h4>
               <p className="text-sm text-muted-foreground">
-                Set up webhooks to receive real-time notifications
+                Configure webhooks para receber notificações em tempo real
               </p>
             </div>
           </div>
@@ -99,10 +99,10 @@ export function SetupComplete({ formData }: SetupCompleteProps) {
 
       <div className="flex gap-4 justify-center">
         <Button variant="outline" onClick={() => router.push('/dashboard')}>
-          Go to Dashboard
+          Ir para o Dashboard
         </Button>
         <Button size="lg" onClick={() => router.push('/setup/connector')}>
-          Set Up First Connector
+          Configurar Primeiro Conector
         </Button>
       </div>
     </div>

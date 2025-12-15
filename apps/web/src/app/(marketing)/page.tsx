@@ -26,7 +26,7 @@ function Navigation() {
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2 group">
             <span className="font-semibold text-lg md:text-xl text-[#1A1A1A]">
-              Integra<span className="text-[#FF8C00]">Saude</span>
+              Integra<span className="text-[#FF8C00]">Saúde</span>
             </span>
           </Link>
 
@@ -42,7 +42,7 @@ function Navigation() {
               href="#precos"
               className="text-sm text-[#1A1A1A]/70 hover:text-[#1A1A1A] font-medium transition-colors"
             >
-              Precos
+              Preços
             </a>
             <Link
               href="/sobre"
@@ -64,7 +64,7 @@ function Navigation() {
               href="/signup"
               className="px-5 py-2.5 bg-[#1A1A1A] hover:bg-[#2A2A2A] text-white font-medium text-sm rounded-full shadow-lg hover:shadow-xl transition-all hover:scale-105 active:scale-95"
             >
-              Comecar Gratis
+              Começar Grátis
             </Link>
           </div>
         </div>
@@ -83,7 +83,7 @@ function HeroSection() {
         {/* Badge */}
         <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#FF8C00]/10 text-[#FF8C00] font-medium text-sm mb-8">
           <span className="w-2 h-2 rounded-full bg-[#FF8C00] animate-pulse" />
-          Integracao HL7 e FHIR para hospitais
+          Integração HL7 e FHIR para hospitais
         </div>
 
         {/* Headline */}
@@ -95,7 +95,7 @@ function HeroSection() {
 
         {/* Subheadline */}
         <p className="text-lg md:text-xl text-[#1A1A1A]/60 max-w-2xl mx-auto mb-10 leading-relaxed">
-          Plataforma que conecta Tasy, MV Soul, Pixeon e outros sistemas usando padroes HL7 e FHIR
+          Plataforma que conecta Tasy, MV Soul, Pixeon e outros sistemas usando padrões HL7 e FHIR
           R4. Seguro, conforme LGPD e pronto para RNDS.
         </p>
 
@@ -105,7 +105,7 @@ function HeroSection() {
             href="/signup"
             className="w-full sm:w-auto px-8 py-4 bg-[#1A1A1A] hover:bg-[#2A2A2A] text-white font-medium text-lg rounded-full shadow-xl hover:shadow-2xl transition-all hover:scale-105 active:scale-95"
           >
-            Comecar Gratuitamente
+            Começar Gratuitamente
           </Link>
           <a
             href="#demo"
@@ -120,7 +120,7 @@ function HeroSection() {
 
         {/* Trust indicator */}
         <div className="pt-8 border-t border-[#E5E5E5]">
-          <p className="text-sm text-[#1A1A1A]/40 mb-4">Uma solucao</p>
+          <p className="text-sm text-[#1A1A1A]/40 mb-4">Uma solução</p>
           <div className="flex items-center justify-center gap-1">
             <span className="text-2xl font-semibold text-[#1A1A1A]">Laudos</span>
             <span className="text-2xl font-semibold text-[#FF8C00]">.AI</span>
@@ -137,9 +137,9 @@ function HeroSection() {
 function StatsSection() {
   const stats = [
     { value: '99.9%', label: 'Uptime garantido' },
-    { value: '< 50ms', label: 'Latencia media' },
-    { value: '10M+', label: 'Mensagens/mes' },
-    { value: '24/7', label: 'Suporte tecnico' },
+    { value: '< 50ms', label: 'Latência média' },
+    { value: '10M+', label: 'Mensagens/mês' },
+    { value: '24/7', label: 'Suporte técnico' },
   ];
 
   return (
@@ -166,9 +166,9 @@ function StatsSection() {
 function FeaturesSection() {
   const features = [
     {
-      title: 'Integracao HL7 v2',
+      title: 'Integração HL7 v2',
       description:
-        'Suporte nativo a mensagens ADT, ORM, ORU, MDM e SIU. Parser automatico com validacao de campos.',
+        'Suporte nativo a mensagens ADT, ORM, ORU, MDM e SIU. Parser automático com validação de campos.',
       icon: (
         <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path
@@ -183,7 +183,7 @@ function FeaturesSection() {
     {
       title: 'FHIR R4 Nativo',
       description:
-        'Transformacao automatica para FHIR R4. Compativel com BR-Core e perfis brasileiros para RNDS.',
+        'Transformação automática para FHIR R4. Compatível com BR-Core e perfis brasileiros para RNDS.',
       icon: (
         <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path
@@ -198,7 +198,7 @@ function FeaturesSection() {
     {
       title: 'Conformidade LGPD',
       description:
-        'Criptografia em transito e repouso. Logs de auditoria completos. Anonimizacao de dados sensiveis.',
+        'Criptografia em trânsito e repouso. Logs de auditoria completos. Anonimização de dados sensíveis.',
       icon: (
         <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path
@@ -213,7 +213,7 @@ function FeaturesSection() {
     {
       title: 'API REST Completa',
       description:
-        'Endpoints documentados com OpenAPI. Autenticacao por API Key. Rate limiting configuravel.',
+        'Endpoints documentados com OpenAPI. Autenticação por API Key. Rate limiting configurável.',
       icon: (
         <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path
@@ -228,7 +228,7 @@ function FeaturesSection() {
     {
       title: 'Webhooks em Tempo Real',
       description:
-        'Receba notificacoes instantaneas de novas mensagens. Retry automatico com backoff exponencial.',
+        'Receba notificações instantâneas de novas mensagens. Retry automático com backoff exponencial.',
       icon: (
         <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path
@@ -241,9 +241,9 @@ function FeaturesSection() {
       ),
     },
     {
-      title: 'Dashboard Analitico',
+      title: 'Dashboard Analítico',
       description:
-        'Visualize metricas em tempo real. Historico de mensagens. Alertas configuravels por canal.',
+        'Visualize métricas em tempo real. Histórico de mensagens. Alertas configuráveis por canal.',
       icon: (
         <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path
@@ -263,10 +263,10 @@ function FeaturesSection() {
         {/* Section header */}
         <div className="max-w-2xl mb-16">
           <h2 className="text-3xl md:text-4xl font-semibold text-[#1A1A1A] mb-4">
-            Tudo para integrar sistemas de saude
+            Tudo para integrar sistemas de saúde
           </h2>
           <p className="text-lg text-[#1A1A1A]/60">
-            Uma plataforma completa que elimina a complexidade das integracoes hospitalares.
+            Uma plataforma completa que elimina a complexidade das integrações hospitalares.
           </p>
         </div>
 
@@ -300,12 +300,12 @@ function FeaturesSection() {
 // ============================================================================
 function IntegrationsSection() {
   const integrations = [
-    { name: 'Tasy', status: 'Disponivel' },
-    { name: 'MV Soul', status: 'Disponivel' },
-    { name: 'Pixeon', status: 'Disponivel' },
+    { name: 'Tasy', status: 'Disponível' },
+    { name: 'MV Soul', status: 'Disponível' },
+    { name: 'Pixeon', status: 'Disponível' },
     { name: 'Wareline', status: 'Em breve' },
-    { name: 'Philips Tasy', status: 'Disponivel' },
-    { name: 'HL7 Generico', status: 'Disponivel' },
+    { name: 'Philips Tasy', status: 'Disponível' },
+    { name: 'HL7 Genérico', status: 'Disponível' },
   ];
 
   return (
@@ -319,7 +319,7 @@ function IntegrationsSection() {
             </h2>
             <p className="text-lg text-[#1A1A1A]/60 mb-8">
               Nossa plataforma reconhece automaticamente os formatos de mensagem e configura os
-              conectores para voce.
+              conectores para você.
             </p>
 
             <div className="grid grid-cols-2 gap-4">
@@ -336,7 +336,7 @@ function IntegrationsSection() {
                   <div>
                     <div className="font-medium text-[#1A1A1A]">{integration.name}</div>
                     <div
-                      className={`text-xs ${integration.status === 'Disponivel' ? 'text-green-600' : 'text-[#FF8C00]'}`}
+                      className={`text-xs ${integration.status === 'Disponível' ? 'text-green-600' : 'text-[#FF8C00]'}`}
                     >
                       {integration.status}
                     </div>
@@ -364,7 +364,7 @@ function IntegrationsSection() {
                 </div>
                 <div className="mt-8 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#FF8C00] text-white text-sm font-medium">
                   <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
-                  Conversao automatica
+                  Conversão automática
                 </div>
               </div>
             </div>
@@ -386,11 +386,11 @@ function PricingSection() {
       name: 'Starter',
       description: 'Para hospitais iniciando',
       price: annual ? 'R$ 4.990' : 'R$ 499',
-      period: annual ? '/ano' : '/mes',
+      period: annual ? '/ano' : '/mês',
       features: [
-        '10.000 mensagens/mes',
+        '10.000 mensagens/mês',
         '2 conectores',
-        '5 usuarios',
+        '5 usuários',
         'Suporte por email',
         'SLA 99.5%',
       ],
@@ -401,12 +401,12 @@ function PricingSection() {
       name: 'Professional',
       description: 'Para hospitais em crescimento',
       price: annual ? 'R$ 14.990' : 'R$ 1.499',
-      period: annual ? '/ano' : '/mes',
+      period: annual ? '/ano' : '/mês',
       features: [
-        '50.000 mensagens/mes',
+        '50.000 mensagens/mês',
         '5 conectores',
-        '20 usuarios',
-        'Suporte prioritario',
+        '20 usuários',
+        'Suporte prioritário',
         'SLA 99.9%',
         'Webhooks customizados',
         'API completa',
@@ -422,10 +422,10 @@ function PricingSection() {
       features: [
         'Mensagens ilimitadas',
         'Conectores ilimitados',
-        'Usuarios ilimitados',
+        'Usuários ilimitados',
         'Suporte 24/7',
         'SLA 99.99%',
-        'On-premise disponivel',
+        'On-premise disponível',
         'Gerente dedicado',
       ],
       cta: 'Falar com Vendas',
@@ -438,7 +438,7 @@ function PricingSection() {
       <div className="max-w-6xl mx-auto px-4 md:px-6">
         <div className="text-center mb-16">
           <h2 className="text-3xl md:text-4xl font-semibold text-[#1A1A1A] mb-4">
-            Precos transparentes
+            Preços transparentes
           </h2>
           <p className="text-lg text-[#1A1A1A]/60 mb-8">Escolha o plano ideal para seu hospital</p>
 
@@ -551,10 +551,10 @@ function CTASection() {
     <section className="py-24 bg-[#1A1A1A]">
       <div className="max-w-4xl mx-auto px-4 md:px-6 text-center">
         <h2 className="text-3xl md:text-4xl lg:text-5xl font-semibold text-white mb-6">
-          Pronto para simplificar suas integracoes?
+          Pronto para simplificar suas integrações?
         </h2>
         <p className="text-lg text-white/60 mb-10 max-w-2xl mx-auto">
-          Junte-se a hospitais que ja economizam tempo e recursos com IntegraSaude.
+          Junte-se a hospitais que já economizam tempo e recursos com IntegraSaúde.
         </p>
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -562,7 +562,7 @@ function CTASection() {
             href="/signup"
             className="w-full sm:w-auto px-8 py-4 bg-white text-[#1A1A1A] font-medium text-lg rounded-full shadow-xl hover:shadow-2xl transition-all hover:scale-105 active:scale-95"
           >
-            Comecar Gratuitamente
+            Começar Gratuitamente
           </Link>
           <a
             href="mailto:contato@integrasaude.com.br"
@@ -573,7 +573,7 @@ function CTASection() {
         </div>
 
         <p className="mt-8 text-white/40 text-sm">
-          Sem cartao de credito necessario | 14 dias gratis | Cancele quando quiser
+          Sem cartão de crédito necessário | 14 dias grátis | Cancele quando quiser
         </p>
       </div>
     </section>
@@ -592,12 +592,12 @@ function Footer() {
           <div className="lg:col-span-2">
             <Link href="/" className="flex items-center gap-2 mb-4">
               <span className="text-xl font-semibold text-white">
-                Integra<span className="text-[#FF8C00]">Saude</span>
+                Integra<span className="text-[#FF8C00]">Saúde</span>
               </span>
             </Link>
             <p className="text-white/50 max-w-sm mb-6">
-              Plataforma de integracao HL7 e FHIR para hospitais brasileiros. Conecte seus sistemas
-              de saude com seguranca e conformidade.
+              Plataforma de integração HL7 e FHIR para hospitais brasileiros. Conecte seus sistemas
+              de saúde com segurança e conformidade.
             </p>
             <div className="flex gap-3">
               <a
@@ -667,7 +667,7 @@ function Footer() {
             <ul className="space-y-3">
               <li>
                 <Link href="/docs" className="hover:text-white transition-colors">
-                  Documentacao
+                  Documentação
                 </Link>
               </li>
               <li>

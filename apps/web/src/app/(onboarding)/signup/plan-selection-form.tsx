@@ -21,50 +21,50 @@ const plans: Plan[] = [
   {
     id: 'starter',
     name: 'Starter',
-    description: 'Perfect for small clinics',
+    description: 'Perfeito para pequenas clínicas',
     price: 299,
     period: 'monthly',
     features: [
-      'Up to 1,000 messages/month',
-      '1 connector',
-      'Email support',
-      'Basic analytics',
-      'API access',
+      'Até 1.000 mensagens/mês',
+      '1 conector',
+      'Suporte por email',
+      'Análise básica',
+      'Acesso à API',
     ],
   },
   {
     id: 'professional',
     name: 'Professional',
-    description: 'For growing hospitals',
+    description: 'Para hospitais em crescimento',
     price: 899,
     period: 'monthly',
     popular: true,
     features: [
-      'Up to 10,000 messages/month',
-      'Up to 5 connectors',
-      'Priority support',
-      'Advanced analytics',
-      'API access',
-      'Custom webhooks',
-      'SLA guarantee',
+      'Até 10.000 mensagens/mês',
+      'Até 5 conectores',
+      'Suporte prioritário',
+      'Análise avançada',
+      'Acesso à API',
+      'Webhooks customizados',
+      'Garantia de SLA',
     ],
   },
   {
     id: 'enterprise',
     name: 'Enterprise',
-    description: 'For large healthcare networks',
+    description: 'Para grandes redes de saúde',
     price: 2499,
     period: 'monthly',
     features: [
-      'Unlimited messages',
-      'Unlimited connectors',
-      '24/7 dedicated support',
-      'Advanced analytics',
-      'API access',
-      'Custom webhooks',
-      '99.9% SLA guarantee',
-      'Custom integrations',
-      'On-premise option',
+      'Mensagens ilimitadas',
+      'Conectores ilimitados',
+      'Suporte dedicado 24/7',
+      'Análise avançada',
+      'Acesso à API',
+      'Webhooks customizados',
+      'Garantia de SLA 99.9%',
+      'Integrações customizadas',
+      'Opção on-premise',
     ],
   },
 ];
@@ -88,9 +88,9 @@ export function PlanSelectionForm({ onNext, onBack, initialData = {} }: PlanSele
   return (
     <div className="space-y-6">
       <div className="text-center">
-        <h2 className="text-2xl font-bold">Choose Your Plan</h2>
+        <h2 className="text-2xl font-bold">Escolha Seu Plano</h2>
         <p className="text-muted-foreground mt-2">
-          Start with a 14-day free trial. No credit card required.
+          Comece com 14 dias de teste grátis. Sem cartão de crédito.
         </p>
       </div>
 
@@ -99,15 +99,15 @@ export function PlanSelectionForm({ onNext, onBack, initialData = {} }: PlanSele
           variant={period === 'monthly' ? 'default' : 'outline'}
           onClick={() => setPeriod('monthly')}
         >
-          Monthly
+          Mensal
         </Button>
         <Button
           variant={period === 'annual' ? 'default' : 'outline'}
           onClick={() => setPeriod('annual')}
         >
-          Annual
+          Anual
           <Badge variant="secondary" className="ml-2">
-            Save 20%
+            -20%
           </Badge>
         </Button>
       </div>
@@ -128,7 +128,7 @@ export function PlanSelectionForm({ onNext, onBack, initialData = {} }: PlanSele
             >
               {plan.popular && (
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                  <Badge>Most Popular</Badge>
+                  <Badge>Mais Popular</Badge>
                 </div>
               )}
               <CardHeader>
@@ -138,7 +138,7 @@ export function PlanSelectionForm({ onNext, onBack, initialData = {} }: PlanSele
                   <div className="flex items-baseline">
                     <span className="text-3xl font-bold">R${price}</span>
                     <span className="text-muted-foreground ml-2">
-                      /{period === 'monthly' ? 'month' : 'year'}
+                      /{period === 'monthly' ? 'mês' : 'ano'}
                     </span>
                   </div>
                 </div>
@@ -160,10 +160,10 @@ export function PlanSelectionForm({ onNext, onBack, initialData = {} }: PlanSele
 
       <div className="flex justify-between pt-6">
         <Button type="button" variant="outline" onClick={onBack}>
-          Back
+          Voltar
         </Button>
         <Button onClick={handleSubmit} size="lg" disabled={!selectedPlan}>
-          Continue
+          Continuar
         </Button>
       </div>
     </div>
