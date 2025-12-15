@@ -3,8 +3,12 @@ import organizationsRouter from './organizations';
 import connectorsRouter from './connectors';
 import fhirRouter from './fhir';
 import jobsRouter from './jobs';
+import { authMiddleware } from '../../middleware/auth';
 
 const v1 = new Hono();
+
+// Apply authentication to all v1 routes
+v1.use('*', authMiddleware);
 
 v1.get('/', (c) => {
   return c.json({

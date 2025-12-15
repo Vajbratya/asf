@@ -1,11 +1,11 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
+import { useEffect, useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
 import {
   Table,
   TableBody,
@@ -13,14 +13,15 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
-import { Plus, Copy, Trash2, Check } from "lucide-react";
+} from '@/components/ui/table';
+import { Plus, Copy, Trash2, Check } from 'lucide-react';
+import { apiFetch, apiGet, apiPost, apiDelete } from '@/lib/api';
 
 export default function ApiKeysPage() {
   const [apiKeys, setApiKeys] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
-  const [keyName, setKeyName] = useState("");
+  const [keyName, setKeyName] = useState('');
   const [newKey, setNewKey] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
@@ -30,11 +31,10 @@ export default function ApiKeysPage() {
 
   const fetchApiKeys = async () => {
     try {
-      const res = await fetch("http://localhost:3001/api/keys");
-      const data = await res.json();
+      const data = await apiGet<{ apiKeys: any[] }>('/api/keys');
       setApiKeys(data.apiKeys);
     } catch (error) {
-      console.error("Failed to fetch API keys:", error);
+      console.error('Failed to fetch API keys:', error);
     } finally {
       setLoading(false);
     }
@@ -43,34 +43,24 @@ export default function ApiKeysPage() {
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const res = await fetch("http://localhost:3001/api/keys", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: keyName }),
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        setNewKey(data.key);
-        setShowForm(false);
-        setKeyName("");
-        fetchApiKeys();
-      }
+      const data = await apiPost<{ key: string }>('/api/keys', { name: keyName });
+      setNewKey(data.key);
+      setShowForm(false);
+      setKeyName('');
+      fetchApiKeys();
     } catch (error) {
-      console.error("Failed to create API key:", error);
+      console.error('Failed to create API key:', error);
     }
   };
 
   const handleRevoke = async (id: string) => {
-    if (!confirm("Are you sure you want to revoke this API key?")) return;
+    if (!confirm('Are you sure you want to revoke this API key?')) return;
 
     try {
-      await fetch(`http://localhost:3001/api/keys/${id}`, {
-        method: "DELETE",
-      });
+      await apiDelete(`/api/keys/${id}`);
       fetchApiKeys();
     } catch (error) {
-      console.error("Failed to revoke API key:", error);
+      console.error('Failed to revoke API key:', error);
     }
   };
 
@@ -89,9 +79,7 @@ export default function ApiKeysPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">API Keys</h1>
-          <p className="text-muted-foreground">
-            Generate and manage API keys for authentication
-          </p>
+          <p className="text-muted-foreground">Generate and manage API keys for authentication</p>
         </div>
         <Button onClick={() => setShowForm(!showForm)}>
           <Plus className="mr-2 h-4 w-4" />
@@ -103,34 +91,21 @@ export default function ApiKeysPage() {
       {newKey && (
         <Card className="border-green-500">
           <CardHeader>
-            <CardTitle className="text-green-600">
-              New API Key Generated
-            </CardTitle>
+            <CardTitle className="text-green-600">New API Key Generated</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              <div className="rounded-lg bg-muted p-4 font-mono text-sm break-all">
-                {newKey}
-              </div>
+              <div className="rounded-lg bg-muted p-4 font-mono text-sm break-all">{newKey}</div>
               <div className="flex items-center gap-2">
                 <Button onClick={() => copyToClipboard(newKey)} size="sm">
-                  {copied ? (
-                    <Check className="mr-2 h-4 w-4" />
-                  ) : (
-                    <Copy className="mr-2 h-4 w-4" />
-                  )}
-                  {copied ? "Copied!" : "Copy Key"}
+                  {copied ? <Check className="mr-2 h-4 w-4" /> : <Copy className="mr-2 h-4 w-4" />}
+                  {copied ? 'Copied!' : 'Copy Key'}
                 </Button>
                 <p className="text-sm text-muted-foreground">
-                  Make sure to copy this key now. You won't be able to see it
-                  again!
+                  Make sure to copy this key now. You won't be able to see it again!
                 </p>
               </div>
-              <Button
-                variant="outline"
-                onClick={() => setNewKey(null)}
-                size="sm"
-              >
+              <Button variant="outline" onClick={() => setNewKey(null)} size="sm">
                 Dismiss
               </Button>
             </div>
@@ -161,11 +136,7 @@ export default function ApiKeysPage() {
               </div>
               <div className="flex gap-2">
                 <Button type="submit">Generate</Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setShowForm(false)}
-                >
+                <Button type="button" variant="outline" onClick={() => setShowForm(false)}>
                   Cancel
                 </Button>
               </div>
@@ -191,10 +162,7 @@ export default function ApiKeysPage() {
             <TableBody>
               {apiKeys.length === 0 ? (
                 <TableRow>
-                  <TableCell
-                    colSpan={6}
-                    className="text-center text-muted-foreground"
-                  >
+                  <TableCell colSpan={6} className="text-center text-muted-foreground">
                     No API keys yet. Generate one to get started.
                   </TableCell>
                 </TableRow>
@@ -202,9 +170,7 @@ export default function ApiKeysPage() {
                 apiKeys.map((key) => (
                   <TableRow key={key.id}>
                     <TableCell className="font-medium">{key.name}</TableCell>
-                    <TableCell className="font-mono text-xs">
-                      {key.key}
-                    </TableCell>
+                    <TableCell className="font-mono text-xs">{key.key}</TableCell>
                     <TableCell>
                       {key.active ? (
                         <Badge variant="success">Active</Badge>
@@ -213,13 +179,9 @@ export default function ApiKeysPage() {
                       )}
                     </TableCell>
                     <TableCell>
-                      {key.lastUsedAt
-                        ? new Date(key.lastUsedAt).toLocaleString()
-                        : "Never"}
+                      {key.lastUsedAt ? new Date(key.lastUsedAt).toLocaleString() : 'Never'}
                     </TableCell>
-                    <TableCell>
-                      {new Date(key.createdAt).toLocaleDateString()}
-                    </TableCell>
+                    <TableCell>{new Date(key.createdAt).toLocaleDateString()}</TableCell>
                     <TableCell className="text-right">
                       <Button
                         size="sm"

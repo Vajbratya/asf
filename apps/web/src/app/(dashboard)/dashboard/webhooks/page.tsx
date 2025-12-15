@@ -1,29 +1,30 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Plus, Trash2 } from "lucide-react";
+import { useEffect, useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Plus, Trash2 } from 'lucide-react';
+import { apiGet, apiPost, apiDelete } from '@/lib/api';
 
 export default function WebhooksPage() {
   const [webhooks, setWebhooks] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({
-    name: "",
-    url: "",
-    secret: "",
+    name: '',
+    url: '',
+    secret: '',
     events: [] as string[],
   });
 
   const availableEvents = [
-    "message.received",
-    "message.processing",
-    "message.processed",
-    "message.failed",
+    'message.received',
+    'message.processing',
+    'message.processed',
+    'message.failed',
   ];
 
   useEffect(() => {
@@ -32,11 +33,10 @@ export default function WebhooksPage() {
 
   const fetchWebhooks = async () => {
     try {
-      const res = await fetch("http://localhost:3001/api/webhooks");
-      const data = await res.json();
+      const data = await apiGet<{ webhooks: any[] }>('/api/webhooks');
       setWebhooks(data.webhooks);
     } catch (error) {
-      console.error("Failed to fetch webhooks:", error);
+      console.error('Failed to fetch webhooks:', error);
     } finally {
       setLoading(false);
     }
@@ -45,32 +45,23 @@ export default function WebhooksPage() {
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const res = await fetch("http://localhost:3001/api/webhooks", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      });
-
-      if (res.ok) {
-        setShowForm(false);
-        setFormData({ name: "", url: "", secret: "", events: [] });
-        fetchWebhooks();
-      }
+      await apiPost('/api/webhooks', formData);
+      setShowForm(false);
+      setFormData({ name: '', url: '', secret: '', events: [] });
+      fetchWebhooks();
     } catch (error) {
-      console.error("Failed to create webhook:", error);
+      console.error('Failed to create webhook:', error);
     }
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this webhook?")) return;
+    if (!confirm('Are you sure you want to delete this webhook?')) return;
 
     try {
-      await fetch(`http://localhost:3001/api/webhooks/${id}`, {
-        method: "DELETE",
-      });
+      await apiDelete(`/api/webhooks/${id}`);
       fetchWebhooks();
     } catch (error) {
-      console.error("Failed to delete webhook:", error);
+      console.error('Failed to delete webhook:', error);
     }
   };
 
@@ -114,9 +105,7 @@ export default function WebhooksPage() {
                 <Input
                   id="name"
                   value={formData.name}
-                  onChange={(e) =>
-                    setFormData({ ...formData, name: e.target.value })
-                  }
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   required
                 />
               </div>
@@ -126,9 +115,7 @@ export default function WebhooksPage() {
                   id="url"
                   type="url"
                   value={formData.url}
-                  onChange={(e) =>
-                    setFormData({ ...formData, url: e.target.value })
-                  }
+                  onChange={(e) => setFormData({ ...formData, url: e.target.value })}
                   placeholder="https://your-app.com/webhook"
                   required
                 />
@@ -138,9 +125,7 @@ export default function WebhooksPage() {
                 <Input
                   id="secret"
                   value={formData.secret}
-                  onChange={(e) =>
-                    setFormData({ ...formData, secret: e.target.value })
-                  }
+                  onChange={(e) => setFormData({ ...formData, secret: e.target.value })}
                   placeholder="Webhook signing secret"
                   required
                 />
@@ -167,11 +152,7 @@ export default function WebhooksPage() {
               </div>
               <div className="flex gap-2">
                 <Button type="submit">Create</Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setShowForm(false)}
-                >
+                <Button type="button" variant="outline" onClick={() => setShowForm(false)}>
                   Cancel
                 </Button>
               </div>
@@ -187,12 +168,10 @@ export default function WebhooksPage() {
               <div className="flex items-start justify-between">
                 <div>
                   <CardTitle>{webhook.name}</CardTitle>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    {webhook.url}
-                  </p>
+                  <p className="text-sm text-muted-foreground mt-1">{webhook.url}</p>
                 </div>
-                <Badge variant={webhook.active ? "success" : "destructive"}>
-                  {webhook.active ? "Active" : "Inactive"}
+                <Badge variant={webhook.active ? 'success' : 'destructive'}>
+                  {webhook.active ? 'Active' : 'Inactive'}
                 </Badge>
               </div>
             </CardHeader>
@@ -210,11 +189,7 @@ export default function WebhooksPage() {
                 </div>
               </div>
               <div className="flex gap-2 mt-4">
-                <Button
-                  size="sm"
-                  variant="destructive"
-                  onClick={() => handleDelete(webhook.id)}
-                >
+                <Button size="sm" variant="destructive" onClick={() => handleDelete(webhook.id)}>
                   <Trash2 className="mr-2 h-3 w-3" />
                   Delete
                 </Button>

@@ -3,7 +3,7 @@
  * Parses messages by protocol, transforms to FHIR, stores FHIR resources, routes to destinations
  */
 
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -27,20 +27,27 @@ export class ProcessorService {
       // Update status to processing
       await prisma.message.update({
         where: { id: messageId },
-        data: { status: "processing" },
+        data: { status: 'processing' },
       });
 
       // Parse and transform based on protocol
       let fhirResources: any;
       switch (message.protocol) {
-        case "HL7v2":
+        case 'HL7v2':
           fhirResources = await this.transformHL7toFHIR(message.rawMessage);
           break;
-        case "XML":
+        case 'XML':
           fhirResources = await this.transformXMLtoFHIR(message.rawMessage);
           break;
-        case "FHIR":
-          fhirResources = JSON.parse(message.rawMessage);
+        case 'FHIR':
+          // Safely parse JSON with error handling
+          try {
+            fhirResources = JSON.parse(message.rawMessage);
+          } catch (parseError) {
+            throw new Error(
+              `Invalid JSON in FHIR message: ${parseError instanceof Error ? parseError.message : 'Unknown error'}`
+            );
+          }
           break;
         default:
           throw new Error(`Unsupported protocol: ${message.protocol}`);
@@ -51,22 +58,21 @@ export class ProcessorService {
       await prisma.message.update({
         where: { id: messageId },
         data: {
-          status: "processed",
+          status: 'processed',
           fhirResources,
           processingTime,
         },
       });
 
-      return { messageId, status: "processed", fhirResources };
+      return { messageId, status: 'processed', fhirResources };
     } catch (error) {
       // Update status to failed
       const processingTime = Date.now() - startTime;
       await prisma.message.update({
         where: { id: messageId },
         data: {
-          status: "failed",
-          errorMessage:
-            error instanceof Error ? error.message : "Unknown error",
+          status: 'failed',
+          errorMessage: error instanceof Error ? error.message : 'Unknown error',
           processingTime,
         },
       });
@@ -80,7 +86,7 @@ export class ProcessorService {
    */
   private async transformHL7toFHIR(rawMessage: string): Promise<any> {
     const segments = rawMessage
-      .split("\n")
+      .split('\n')
       .map((line) => line.trim())
       .filter(Boolean);
     const resources: any[] = [];
@@ -89,13 +95,13 @@ export class ProcessorService {
     const msh = this.parseHL7Segment(segments[0]);
     const messageType = msh.fields[8]?.components[0]; // MSH-9.1
 
-    if (messageType === "ADT") {
+    if (messageType === 'ADT') {
       // ADT messages typically contain Patient demographic updates
-      const pid = segments.find((s) => s.startsWith("PID"));
+      const pid = segments.find((s) => s.startsWith('PID'));
       if (pid) {
         const pidFields = this.parseHL7Segment(pid);
         resources.push({
-          resourceType: "Patient",
+          resourceType: 'Patient',
           id: pidFields.fields[3]?.value, // PID-3 Patient ID
           name: [
             {
@@ -109,16 +115,16 @@ export class ProcessorService {
       }
     }
 
-    if (messageType === "ORM") {
+    if (messageType === 'ORM') {
       // ORM messages are orders (ServiceRequest in FHIR)
       resources.push({
-        resourceType: "ServiceRequest",
-        status: "active",
-        intent: "order",
+        resourceType: 'ServiceRequest',
+        status: 'active',
+        intent: 'order',
       });
     }
 
-    return { resourceType: "Bundle", type: "transaction", entry: resources };
+    return { resourceType: 'Bundle', type: 'transaction', entry: resources };
   }
 
   /**
@@ -128,17 +134,17 @@ export class ProcessorService {
     // This is a simplified transformation
     // In production, you'd use proper XML parsing and mapping
     return {
-      resourceType: "Bundle",
-      type: "transaction",
+      resourceType: 'Bundle',
+      type: 'transaction',
       entry: [
         {
-          resourceType: "DocumentReference",
-          status: "current",
+          resourceType: 'DocumentReference',
+          status: 'current',
           content: [
             {
               attachment: {
-                contentType: "application/xml",
-                data: Buffer.from(rawMessage).toString("base64"),
+                contentType: 'application/xml',
+                data: Buffer.from(rawMessage).toString('base64'),
               },
             },
           ],
@@ -151,12 +157,12 @@ export class ProcessorService {
    * Parse HL7 segment into fields
    */
   private parseHL7Segment(segment: string) {
-    const parts = segment.split("|");
+    const parts = segment.split('|');
     const segmentType = parts[0];
     const fields = parts.slice(1).map((field, index) => ({
       index: index + 1,
       value: field,
-      components: field.split("^"),
+      components: field.split('^'),
     }));
 
     return { segmentType, fields };
@@ -178,14 +184,14 @@ export class ProcessorService {
    */
   private mapHL7Gender(gender?: string): string {
     switch (gender?.toUpperCase()) {
-      case "M":
-        return "male";
-      case "F":
-        return "female";
-      case "O":
-        return "other";
+      case 'M':
+        return 'male';
+      case 'F':
+        return 'female';
+      case 'O':
+        return 'other';
       default:
-        return "unknown";
+        return 'unknown';
     }
   }
 }

@@ -1,6 +1,7 @@
-import { PrismaClient, Prisma } from "@prisma/client";
-import { FhirResource, Bundle } from "../types/fhir";
-import { SearchParams, getPaginationParams } from "../utils/fhir-helpers";
+import { PrismaClient, Prisma } from '@prisma/client';
+import { FhirResource, Bundle } from '../types/fhir';
+import { SearchParams, getPaginationParams } from '../utils/fhir-helpers';
+import { HTTPException } from 'hono/http-exception';
 
 /**
  * FHIR Search Service
@@ -8,18 +9,29 @@ import { SearchParams, getPaginationParams } from "../utils/fhir-helpers";
  */
 export class FHIRSearch {
   private prisma: PrismaClient;
+  private orgId?: string;
 
-  constructor(prisma: PrismaClient) {
+  constructor(prisma: PrismaClient, orgId?: string) {
     this.prisma = prisma;
+    this.orgId = orgId;
+  }
+
+  /**
+   * Check if user is authenticated
+   */
+  private checkAuth(): void {
+    if (!this.orgId) {
+      throw new HTTPException(401, { message: 'Unauthorized: Organization ID required' });
+    }
   }
 
   /**
    * Search for FHIR resources by resource type and search parameters
    */
-  async search(
-    resourceType: string,
-    searchParams: SearchParams,
-  ): Promise<Bundle> {
+  async search(resourceType: string, searchParams: SearchParams): Promise<Bundle> {
+    // Check authentication
+    this.checkAuth();
+
     const { count, offset } = getPaginationParams(searchParams);
 
     // Build search conditions based on resource type
@@ -34,7 +46,7 @@ export class FHIRSearch {
           ...conditions,
         },
         orderBy: {
-          createdAt: "desc",
+          createdAt: 'desc',
         },
         skip: offset,
         take: count,
@@ -51,7 +63,7 @@ export class FHIRSearch {
     // Handle _include parameter for references
     const includedResources = await this.handleInclude(
       resources,
-      searchParams._include as string | undefined,
+      searchParams._include as string | undefined
     );
 
     // Build Bundle response
@@ -59,18 +71,18 @@ export class FHIRSearch {
       ...resources.map((r) => ({
         fullUrl: `${r.resourceType}/${r.resourceId}`,
         resource: r.content as FhirResource,
-        search: { mode: "match" as const },
+        search: { mode: 'match' as const },
       })),
       ...includedResources.map((r) => ({
         fullUrl: `${r.resourceType}/${r.resourceId}`,
         resource: r.content as FhirResource,
-        search: { mode: "include" as const },
+        search: { mode: 'include' as const },
       })),
     ];
 
     return {
-      resourceType: "Bundle",
-      type: "searchset",
+      resourceType: 'Bundle',
+      type: 'searchset',
       total,
       entry: entries,
     };
@@ -81,14 +93,14 @@ export class FHIRSearch {
    */
   private buildSearchConditions(
     resourceType: string,
-    searchParams: SearchParams,
+    searchParams: SearchParams
   ): Prisma.FhirResourceWhereInput {
     switch (resourceType) {
-      case "Patient":
+      case 'Patient':
         return this.buildPatientSearch(searchParams);
-      case "Encounter":
+      case 'Encounter':
         return this.buildEncounterSearch(searchParams);
-      case "DiagnosticReport":
+      case 'DiagnosticReport':
         return this.buildDiagnosticReportSearch(searchParams);
       default:
         return {};
@@ -98,9 +110,7 @@ export class FHIRSearch {
   /**
    * Build search conditions for Patient resources
    */
-  private buildPatientSearch(
-    searchParams: SearchParams,
-  ): Prisma.FhirResourceWhereInput {
+  private buildPatientSearch(searchParams: SearchParams): Prisma.FhirResourceWhereInput {
     const conditions: Prisma.FhirResourceWhereInput = {};
     const contentConditions: any[] = [];
 
@@ -108,7 +118,7 @@ export class FHIRSearch {
     if (searchParams.identifier) {
       const identifier = String(searchParams.identifier);
       contentConditions.push({
-        path: ["identifier"],
+        path: ['identifier'],
         array_contains: [
           {
             value: identifier,
@@ -121,10 +131,10 @@ export class FHIRSearch {
     if (searchParams.cpf) {
       const cpf = String(searchParams.cpf);
       contentConditions.push({
-        path: ["identifier"],
+        path: ['identifier'],
         array_contains: [
           {
-            system: "http://rnds.saude.gov.br/fhir/r4/NamingSystem/cpf",
+            system: 'http://rnds.saude.gov.br/fhir/r4/NamingSystem/cpf',
             value: cpf,
           },
         ],
@@ -135,29 +145,39 @@ export class FHIRSearch {
     if (searchParams.cns) {
       const cns = String(searchParams.cns);
       contentConditions.push({
-        path: ["identifier"],
+        path: ['identifier'],
         array_contains: [
           {
-            system: "http://rnds.saude.gov.br/fhir/r4/NamingSystem/cns",
+            system: 'http://rnds.saude.gov.br/fhir/r4/NamingSystem/cns',
             value: cns,
           },
         ],
       });
     }
 
-    // Search by name
+    // Search by name (using parameterized queries instead of raw SQL)
     if (searchParams.name) {
       const name = String(searchParams.name).toLowerCase();
-      contentConditions.push(
-        Prisma.sql`content->'name' @> '[{"family": "${Prisma.raw(name)}"}]'::jsonb OR content->'name' @> '[{"given": ["${Prisma.raw(name)}"]}]'::jsonb`,
-      );
+      // Use OR condition for family or given name
+      contentConditions.push({
+        OR: [
+          {
+            path: ['name'],
+            array_contains: [{ family: name }],
+          },
+          {
+            path: ['name'],
+            array_contains: [{ given: [name] }],
+          },
+        ],
+      });
     }
 
     // Search by family name
     if (searchParams.family) {
       const family = String(searchParams.family);
       contentConditions.push({
-        path: ["name"],
+        path: ['name'],
         array_contains: [
           {
             family,
@@ -169,16 +189,21 @@ export class FHIRSearch {
     // Search by given name
     if (searchParams.given) {
       const given = String(searchParams.given);
-      contentConditions.push(
-        Prisma.sql`EXISTS (SELECT 1 FROM jsonb_array_elements(content->'name') AS name WHERE name->'given' @> '["${Prisma.raw(given)}"]'::jsonb)`,
-      );
+      contentConditions.push({
+        path: ['name'],
+        array_contains: [
+          {
+            given: [given],
+          },
+        ],
+      });
     }
 
     // Search by birthDate
     if (searchParams.birthdate) {
       const birthdate = String(searchParams.birthdate);
       contentConditions.push({
-        path: ["birthDate"],
+        path: ['birthDate'],
         equals: birthdate,
       });
     }
@@ -187,7 +212,7 @@ export class FHIRSearch {
     if (searchParams.gender) {
       const gender = String(searchParams.gender);
       contentConditions.push({
-        path: ["gender"],
+        path: ['gender'],
         equals: gender,
       });
     }
@@ -205,56 +230,59 @@ export class FHIRSearch {
   /**
    * Build search conditions for Encounter resources
    */
-  private buildEncounterSearch(
-    searchParams: SearchParams,
-  ): Prisma.FhirResourceWhereInput {
+  private buildEncounterSearch(searchParams: SearchParams): Prisma.FhirResourceWhereInput {
     const conditions: Prisma.FhirResourceWhereInput = {};
     const contentConditions: any[] = [];
 
-    // Search by patient reference
+    // Search by patient reference (using parameterized queries)
     if (searchParams.patient) {
       const patient = String(searchParams.patient);
-      contentConditions.push(
-        Prisma.sql`content->'subject'->>'reference' = '${Prisma.raw(patient)}'`,
-      );
+      contentConditions.push({
+        path: ['subject', 'reference'],
+        equals: patient,
+      });
     }
 
     // Search by status
     if (searchParams.status) {
       const status = String(searchParams.status);
       contentConditions.push({
-        path: ["status"],
+        path: ['status'],
         equals: status,
       });
     }
 
-    // Search by date (period.start)
+    // Search by date (period.start) using safe comparison
     if (searchParams.date) {
       const date = String(searchParams.date);
       // Support date ranges with ge (greater or equal) and le (less or equal)
-      if (date.startsWith("ge")) {
+      if (date.startsWith('ge')) {
         const dateValue = date.substring(2);
-        contentConditions.push(
-          Prisma.sql`content->'period'->>'start' >= '${Prisma.raw(dateValue)}'`,
-        );
-      } else if (date.startsWith("le")) {
+        contentConditions.push({
+          path: ['period', 'start'],
+          gte: dateValue,
+        });
+      } else if (date.startsWith('le')) {
         const dateValue = date.substring(2);
-        contentConditions.push(
-          Prisma.sql`content->'period'->>'start' <= '${Prisma.raw(dateValue)}'`,
-        );
+        contentConditions.push({
+          path: ['period', 'start'],
+          lte: dateValue,
+        });
       } else {
-        contentConditions.push(
-          Prisma.sql`content->'period'->>'start' = '${Prisma.raw(date)}'`,
-        );
+        contentConditions.push({
+          path: ['period', 'start'],
+          equals: date,
+        });
       }
     }
 
-    // Search by class
+    // Search by class (using parameterized queries)
     if (searchParams.class) {
       const classCode = String(searchParams.class);
-      contentConditions.push(
-        Prisma.sql`content->'class'->>'code' = '${Prisma.raw(classCode)}'`,
-      );
+      contentConditions.push({
+        path: ['class', 'code'],
+        equals: classCode,
+      });
     }
 
     // Apply content conditions if any
@@ -270,62 +298,94 @@ export class FHIRSearch {
   /**
    * Build search conditions for DiagnosticReport resources
    */
-  private buildDiagnosticReportSearch(
-    searchParams: SearchParams,
-  ): Prisma.FhirResourceWhereInput {
+  private buildDiagnosticReportSearch(searchParams: SearchParams): Prisma.FhirResourceWhereInput {
     const conditions: Prisma.FhirResourceWhereInput = {};
     const contentConditions: any[] = [];
 
-    // Search by patient reference
+    // Search by patient reference (using parameterized queries)
     if (searchParams.patient) {
       const patient = String(searchParams.patient);
-      contentConditions.push(
-        Prisma.sql`content->'subject'->>'reference' = '${Prisma.raw(patient)}'`,
-      );
+      contentConditions.push({
+        path: ['subject', 'reference'],
+        equals: patient,
+      });
     }
 
     // Search by status
     if (searchParams.status) {
       const status = String(searchParams.status);
       contentConditions.push({
-        path: ["status"],
+        path: ['status'],
         equals: status,
       });
     }
 
-    // Search by category
+    // Search by category (using parameterized queries)
     if (searchParams.category) {
       const category = String(searchParams.category);
-      contentConditions.push(
-        Prisma.sql`EXISTS (SELECT 1 FROM jsonb_array_elements(content->'category') AS cat WHERE cat->'coding' @> '[{"code": "${Prisma.raw(category)}"}]'::jsonb)`,
-      );
+      contentConditions.push({
+        path: ['category'],
+        array_contains: [
+          {
+            coding: [{ code: category }],
+          },
+        ],
+      });
     }
 
-    // Search by code
+    // Search by code (using parameterized queries)
     if (searchParams.code) {
       const code = String(searchParams.code);
-      contentConditions.push(
-        Prisma.sql`content->'code'->'coding' @> '[{"code": "${Prisma.raw(code)}"}]'::jsonb`,
-      );
+      contentConditions.push({
+        path: ['code', 'coding'],
+        array_contains: [{ code }],
+      });
     }
 
-    // Search by date (issued or effectiveDateTime)
+    // Search by date (issued or effectiveDateTime) using safe comparison
     if (searchParams.date) {
       const date = String(searchParams.date);
-      if (date.startsWith("ge")) {
+      if (date.startsWith('ge')) {
         const dateValue = date.substring(2);
-        contentConditions.push(
-          Prisma.sql`(content->>'issued' >= '${Prisma.raw(dateValue)}' OR content->>'effectiveDateTime' >= '${Prisma.raw(dateValue)}')`,
-        );
-      } else if (date.startsWith("le")) {
+        contentConditions.push({
+          OR: [
+            {
+              path: ['issued'],
+              gte: dateValue,
+            },
+            {
+              path: ['effectiveDateTime'],
+              gte: dateValue,
+            },
+          ],
+        });
+      } else if (date.startsWith('le')) {
         const dateValue = date.substring(2);
-        contentConditions.push(
-          Prisma.sql`(content->>'issued' <= '${Prisma.raw(dateValue)}' OR content->>'effectiveDateTime' <= '${Prisma.raw(dateValue)}')`,
-        );
+        contentConditions.push({
+          OR: [
+            {
+              path: ['issued'],
+              lte: dateValue,
+            },
+            {
+              path: ['effectiveDateTime'],
+              lte: dateValue,
+            },
+          ],
+        });
       } else {
-        contentConditions.push(
-          Prisma.sql`(content->>'issued' = '${Prisma.raw(date)}' OR content->>'effectiveDateTime' = '${Prisma.raw(date)}')`,
-        );
+        contentConditions.push({
+          OR: [
+            {
+              path: ['issued'],
+              equals: date,
+            },
+            {
+              path: ['effectiveDateTime'],
+              equals: date,
+            },
+          ],
+        });
       }
     }
 
@@ -342,10 +402,7 @@ export class FHIRSearch {
   /**
    * Handle _include parameter to fetch referenced resources
    */
-  private async handleInclude(
-    resources: any[],
-    include?: string,
-  ): Promise<any[]> {
+  private async handleInclude(resources: any[], include?: string): Promise<any[]> {
     if (!include) {
       return [];
     }
@@ -358,7 +415,7 @@ export class FHIRSearch {
       const content = resource.content as FhirResource;
 
       // Parse include parameter (e.g., "Encounter:patient", "DiagnosticReport:subject")
-      const [sourceType, field] = include.split(":");
+      const [sourceType, field] = include.split(':');
 
       if (content.resourceType === sourceType) {
         const reference = this.extractReference(content, field);
@@ -370,7 +427,7 @@ export class FHIRSearch {
 
     // Fetch referenced resources
     for (const reference of references) {
-      const [type, id] = reference.split("/");
+      const [type, id] = reference.split('/');
       const resource = await this.prisma.fhirResource.findFirst({
         where: {
           resourceType: type,
@@ -378,7 +435,7 @@ export class FHIRSearch {
           deleted: false,
         },
         orderBy: {
-          versionId: "desc",
+          versionId: 'desc',
         },
       });
 
@@ -395,7 +452,7 @@ export class FHIRSearch {
    */
   private extractReference(resource: any, field: string): string | null {
     const fieldValue = resource[field];
-    if (fieldValue && typeof fieldValue === "object" && fieldValue.reference) {
+    if (fieldValue && typeof fieldValue === 'object' && fieldValue.reference) {
       return fieldValue.reference;
     }
     return null;

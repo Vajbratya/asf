@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { useEffect, useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import {
   Table,
   TableBody,
@@ -10,14 +10,9 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
-import {
-  Activity,
-  CheckCircle2,
-  XCircle,
-  Clock,
-  TrendingUp,
-} from "lucide-react";
+} from '@/components/ui/table';
+import { Activity, CheckCircle2, XCircle, Clock, TrendingUp } from 'lucide-react';
+import { apiGet } from '@/lib/api';
 
 export default function DashboardPage() {
   const [metrics, setMetrics] = useState<any>(null);
@@ -27,18 +22,15 @@ export default function DashboardPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [metricsRes, messagesRes] = await Promise.all([
-          fetch("http://localhost:3001/api/metrics?period=24h"),
-          fetch("http://localhost:3001/api/metrics/recent-messages?limit=10"),
+        const [metricsData, messagesData] = await Promise.all([
+          apiGet<any>('/api/metrics?period=24h'),
+          apiGet<{ messages: any[] }>('/api/metrics/recent-messages?limit=10'),
         ]);
-
-        const metricsData = await metricsRes.json();
-        const messagesData = await messagesRes.json();
 
         setMetrics(metricsData);
         setRecentMessages(messagesData.messages);
       } catch (error) {
-        console.error("Failed to fetch dashboard data:", error);
+        console.error('Failed to fetch dashboard data:', error);
       } finally {
         setLoading(false);
       }
@@ -57,38 +49,38 @@ export default function DashboardPage() {
 
   const stats = [
     {
-      title: "Messages Today",
+      title: 'Messages Today',
       value: metrics?.messages?.total || 0,
       icon: Activity,
-      description: "Last 24 hours",
+      description: 'Last 24 hours',
     },
     {
-      title: "Success Rate",
-      value: metrics?.messages?.successRate || "0%",
+      title: 'Success Rate',
+      value: metrics?.messages?.successRate || '0%',
       icon: TrendingUp,
-      description: "Processing accuracy",
+      description: 'Processing accuracy',
     },
     {
-      title: "Processed",
+      title: 'Processed',
       value: metrics?.messages?.byStatus?.processed || 0,
       icon: CheckCircle2,
-      description: "Successfully handled",
+      description: 'Successfully handled',
     },
     {
-      title: "Failed",
+      title: 'Failed',
       value: metrics?.messages?.byStatus?.failed || 0,
       icon: XCircle,
-      description: "Requires attention",
+      description: 'Requires attention',
     },
   ];
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case "processed":
+      case 'processed':
         return <Badge variant="success">Processed</Badge>;
-      case "failed":
+      case 'failed':
         return <Badge variant="destructive">Failed</Badge>;
-      case "processing":
+      case 'processing':
         return <Badge variant="warning">Processing</Badge>;
       default:
         return <Badge variant="outline">{status}</Badge>;
@@ -99,9 +91,7 @@ export default function DashboardPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold">Dashboard</h1>
-        <p className="text-muted-foreground">
-          Overview of your healthcare integration platform
-        </p>
+        <p className="text-muted-foreground">Overview of your healthcare integration platform</p>
       </div>
 
       {/* Metric Cards */}
@@ -109,16 +99,12 @@ export default function DashboardPage() {
         {stats.map((stat) => (
           <Card key={stat.title}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                {stat.title}
-              </CardTitle>
+              <CardTitle className="text-sm font-medium">{stat.title}</CardTitle>
               <stat.icon className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{stat.value}</div>
-              <p className="text-xs text-muted-foreground">
-                {stat.description}
-              </p>
+              <p className="text-xs text-muted-foreground">{stat.description}</p>
             </CardContent>
           </Card>
         ))}
@@ -145,10 +131,7 @@ export default function DashboardPage() {
             <TableBody>
               {recentMessages.length === 0 ? (
                 <TableRow>
-                  <TableCell
-                    colSpan={7}
-                    className="text-center text-muted-foreground"
-                  >
+                  <TableCell colSpan={7} className="text-center text-muted-foreground">
                     No messages yet
                   </TableCell>
                 </TableRow>
@@ -162,13 +145,9 @@ export default function DashboardPage() {
                     <TableCell>{message.protocol}</TableCell>
                     <TableCell>{message.connector}</TableCell>
                     <TableCell>{getStatusBadge(message.status)}</TableCell>
-                    <TableCell>
-                      {new Date(message.createdAt).toLocaleTimeString()}
-                    </TableCell>
+                    <TableCell>{new Date(message.createdAt).toLocaleTimeString()}</TableCell>
                     <TableCell className="text-right">
-                      {message.processingTime
-                        ? `${message.processingTime}ms`
-                        : "-"}
+                      {message.processingTime ? `${message.processingTime}ms` : '-'}
                     </TableCell>
                   </TableRow>
                 ))
@@ -186,9 +165,7 @@ export default function DashboardPage() {
         <CardContent>
           <div className="space-y-2">
             {metrics?.connectors?.length === 0 ? (
-              <div className="text-center text-muted-foreground py-4">
-                No connectors configured
-              </div>
+              <div className="text-center text-muted-foreground py-4">No connectors configured</div>
             ) : (
               metrics?.connectors?.map((connector: any) => (
                 <div
@@ -198,21 +175,15 @@ export default function DashboardPage() {
                   <div className="flex items-center gap-3">
                     <div
                       className={`h-2 w-2 rounded-full ${
-                        connector.isHealthy ? "bg-green-500" : "bg-red-500"
+                        connector.isHealthy ? 'bg-green-500' : 'bg-red-500'
                       }`}
                     />
                     <div>
                       <p className="font-medium">{connector.name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {connector.type}
-                      </p>
+                      <p className="text-xs text-muted-foreground">{connector.type}</p>
                     </div>
                   </div>
-                  <Badge
-                    variant={
-                      connector.status === "active" ? "success" : "destructive"
-                    }
-                  >
+                  <Badge variant={connector.status === 'active' ? 'success' : 'destructive'}>
                     {connector.status}
                   </Badge>
                 </div>

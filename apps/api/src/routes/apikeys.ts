@@ -1,16 +1,20 @@
-import { Hono } from "hono";
-import { PrismaClient } from "@prisma/client";
-import { randomBytes } from "crypto";
+import { Hono } from 'hono';
+import { PrismaClient } from '@prisma/client';
+import { randomBytes } from 'crypto';
+import { authMiddleware } from '../middleware/auth';
 
 const prisma = new PrismaClient();
 const apikeysRouter = new Hono();
 
+// Apply authentication middleware to all routes
+apikeysRouter.use('*', authMiddleware);
+
 // List API keys
-apikeysRouter.get("/", async (c) => {
-  const organizationId = c.req.header("X-Organization-ID") || "default";
+apikeysRouter.get('/', async (c) => {
+  const organizationId = c.req.header('X-Organization-ID') || 'default';
   const apiKeys = await prisma.apiKey.findMany({
     where: { organizationId },
-    orderBy: { createdAt: "desc" },
+    orderBy: { createdAt: 'desc' },
   });
 
   // Mask keys in response
@@ -23,16 +27,16 @@ apikeysRouter.get("/", async (c) => {
 });
 
 // Generate new API key
-apikeysRouter.post("/", async (c) => {
-  const organizationId = c.req.header("X-Organization-ID") || "default";
+apikeysRouter.post('/', async (c) => {
+  const organizationId = c.req.header('X-Organization-ID') || 'default';
   const body = await c.req.json();
 
   // Generate random API key
-  const key = `sk_${randomBytes(32).toString("hex")}`;
+  const key = `sk_${randomBytes(32).toString('hex')}`;
 
   const apiKey = await prisma.apiKey.create({
     data: {
-      name: body.name || "Unnamed Key",
+      name: body.name || 'Unnamed Key',
       key,
       organizationId,
     },
@@ -42,8 +46,8 @@ apikeysRouter.post("/", async (c) => {
 });
 
 // Revoke API key
-apikeysRouter.delete("/:id", async (c) => {
-  const id = c.req.param("id");
+apikeysRouter.delete('/:id', async (c) => {
+  const id = c.req.param('id');
   await prisma.apiKey.update({
     where: { id },
     data: { active: false },
@@ -52,7 +56,7 @@ apikeysRouter.delete("/:id", async (c) => {
 });
 
 // Verify API key (for internal use)
-apikeysRouter.post("/verify", async (c) => {
+apikeysRouter.post('/verify', async (c) => {
   const body = await c.req.json();
   const apiKey = await prisma.apiKey.findUnique({
     where: { key: body.key },
