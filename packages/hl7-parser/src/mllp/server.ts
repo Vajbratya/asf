@@ -8,10 +8,10 @@
  * CR = 0x0D (carriage return)
  */
 
-import * as net from "net";
-import { EventEmitter } from "events";
-import { HL7Parser } from "../parser";
-import { HL7Message, HL7Acknowledgment } from "../types";
+import * as net from 'net';
+import { EventEmitter } from 'events';
+import { HL7Parser } from '../parser';
+import { HL7Message, HL7Acknowledgment } from '../types';
 
 export interface MLLPServerOptions {
   host?: string;
@@ -26,15 +26,15 @@ export interface MLLPServerEvents {
   message: (
     message: HL7Message,
     connectionId: string,
-    respond: (ack: HL7Acknowledgment) => void,
+    respond: (ack: HL7Acknowledgment) => void
   ) => void;
   error: (error: Error, connectionId?: string) => void;
   close: (connectionId: string) => void;
 }
 
-const VT = "\x0B"; // Vertical Tab (Start Block)
-const FS = "\x1C"; // File Separator (End Block)
-const CR = "\x0D"; // Carriage Return (Terminator)
+const VT = '\x0B'; // Vertical Tab (Start Block)
+const FS = '\x1C'; // File Separator (End Block)
+const CR = '\x0D'; // Carriage Return (Terminator)
 
 export class MLLPServer extends EventEmitter {
   private server: net.Server | null = null;
@@ -47,12 +47,11 @@ export class MLLPServer extends EventEmitter {
     super();
 
     this.options = {
-      host: options.host || "0.0.0.0",
+      host: options.host || '0.0.0.0',
       port: options.port,
       timeout: options.timeout || 30000,
       autoAck: options.autoAck !== undefined ? options.autoAck : true,
-      validateMessage:
-        options.validateMessage !== undefined ? options.validateMessage : true,
+      validateMessage: options.validateMessage !== undefined ? options.validateMessage : true,
     };
   }
 
@@ -62,7 +61,7 @@ export class MLLPServer extends EventEmitter {
   start(): Promise<void> {
     return new Promise((resolve, reject) => {
       if (this.server) {
-        reject(new Error("Server is already running"));
+        reject(new Error('Server is already running'));
         return;
       }
 
@@ -70,8 +69,8 @@ export class MLLPServer extends EventEmitter {
         this.handleConnection(socket);
       });
 
-      this.server.on("error", (error) => {
-        this.emit("error", error);
+      this.server.on('error', (error) => {
+        this.emit('error', error);
       });
 
       this.server.listen(this.options.port, this.options.host, () => {
@@ -110,34 +109,34 @@ export class MLLPServer extends EventEmitter {
   private handleConnection(socket: net.Socket): void {
     const connectionId = `conn-${this.nextConnectionId++}`;
     this.connections.set(connectionId, socket);
-    this.buffers.set(connectionId, "");
+    this.buffers.set(connectionId, '');
 
     // Set timeout
     socket.setTimeout(this.options.timeout);
 
-    this.emit("connection", connectionId);
+    this.emit('connection', connectionId);
 
-    socket.on("data", (data) => {
+    socket.on('data', (data) => {
       try {
         this.handleData(connectionId, data);
       } catch (error) {
-        this.emit("error", error as Error, connectionId);
+        this.emit('error', error as Error, connectionId);
       }
     });
 
-    socket.on("timeout", () => {
-      this.emit("error", new Error("Connection timeout"), connectionId);
+    socket.on('timeout', () => {
+      this.emit('error', new Error('Connection timeout'), connectionId);
       socket.destroy();
     });
 
-    socket.on("error", (error) => {
-      this.emit("error", error, connectionId);
+    socket.on('error', (error) => {
+      this.emit('error', error, connectionId);
     });
 
-    socket.on("close", () => {
+    socket.on('close', () => {
       this.connections.delete(connectionId);
       this.buffers.delete(connectionId);
-      this.emit("close", connectionId);
+      this.emit('close', connectionId);
     });
   }
 
@@ -145,24 +144,53 @@ export class MLLPServer extends EventEmitter {
    * Handle incoming data
    */
   private handleData(connectionId: string, data: Buffer): void {
-    const socket = this.connections.get(connectionId);
-    if (!socket) {
-      return;
-    }
-
-    // Append to buffer
-    let buffer = this.buffers.get(connectionId) || "";
-    buffer += data.toString("utf-8");
-    this.buffers.set(connectionId, buffer);
-
-    // Process complete messages
-    while (true) {
-      const message = this.extractMessage(connectionId);
-      if (!message) {
-        break;
+    try {
+      const socket = this.connections.get(connectionId);
+      if (!socket) {
+        this.emit(
+          'error',
+          new Error(`Socket not found for connection: ${connectionId}`),
+          connectionId
+        );
+        return;
       }
 
-      this.processMessage(connectionId, message, socket);
+      // Null check on data
+      if (!data) {
+        this.emit('error', new Error('Received null data'), connectionId);
+        return;
+      }
+
+      // Append to buffer with error handling
+      let buffer = this.buffers.get(connectionId) || '';
+      try {
+        buffer += data.toString('utf-8');
+      } catch (err) {
+        this.emit('error', new Error(`Failed to decode data: ${err}`), connectionId);
+        return;
+      }
+
+      this.buffers.set(connectionId, buffer);
+
+      // Prevent buffer overflow
+      if (buffer.length > 1024 * 1024) {
+        // 1MB limit
+        this.emit('error', new Error('Buffer size exceeded maximum limit (1MB)'), connectionId);
+        this.buffers.set(connectionId, '');
+        return;
+      }
+
+      // Process complete messages
+      while (true) {
+        const message = this.extractMessage(connectionId);
+        if (!message) {
+          break;
+        }
+
+        this.processMessage(connectionId, message, socket);
+      }
+    } catch (error) {
+      this.emit('error', error as Error, connectionId);
     }
   }
 
@@ -170,7 +198,7 @@ export class MLLPServer extends EventEmitter {
    * Extract a complete MLLP message from buffer
    */
   private extractMessage(connectionId: string): string | null {
-    let buffer = this.buffers.get(connectionId) || "";
+    let buffer = this.buffers.get(connectionId) || '';
 
     // Look for start block (VT)
     const startIndex = buffer.indexOf(VT);
@@ -204,11 +232,7 @@ export class MLLPServer extends EventEmitter {
   /**
    * Process a complete HL7 message
    */
-  private processMessage(
-    connectionId: string,
-    messageText: string,
-    socket: net.Socket,
-  ): void {
+  private processMessage(connectionId: string, messageText: string, socket: net.Socket): void {
     try {
       // Parse HL7 message
       const message = HL7Parser.parse(messageText);
@@ -224,25 +248,24 @@ export class MLLPServer extends EventEmitter {
       };
 
       // Emit message event
-      this.emit("message", message, connectionId, respond);
+      this.emit('message', message, connectionId, respond);
 
       // Auto-acknowledge if enabled
       if (this.options.autoAck) {
-        const ack = HL7Parser.generateACK(message.messageControlId, "AA");
+        const ack = HL7Parser.generateACK(message.messageControlId, 'AA');
         this.sendAcknowledgment(socket, ack);
       }
     } catch (error) {
       // Send NAK on error
       try {
-        const errorMessage =
-          error instanceof Error ? error.message : "Unknown error";
-        const nak = HL7Parser.generateNAK("UNKNOWN", errorMessage);
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        const nak = HL7Parser.generateNAK('UNKNOWN', errorMessage);
         this.sendAcknowledgment(socket, nak);
       } catch (nakError) {
         // Ignore NAK sending errors
       }
 
-      this.emit("error", error as Error, connectionId);
+      this.emit('error', error as Error, connectionId);
     }
   }
 
@@ -250,8 +273,24 @@ export class MLLPServer extends EventEmitter {
    * Send ACK/NAK response
    */
   private sendAcknowledgment(socket: net.Socket, ack: HL7Acknowledgment): void {
-    const framedMessage = VT + ack.raw + FS + CR;
-    socket.write(framedMessage);
+    try {
+      if (!socket || socket.destroyed) {
+        throw new Error('Socket is not available for writing');
+      }
+
+      if (!ack || !ack.raw) {
+        throw new Error('Invalid acknowledgment message');
+      }
+
+      const framedMessage = VT + ack.raw + FS + CR;
+      socket.write(framedMessage, (error) => {
+        if (error) {
+          this.emit('error', new Error(`Failed to send acknowledgment: ${error.message}`));
+        }
+      });
+    } catch (error) {
+      this.emit('error', error as Error);
+    }
   }
 
   /**
@@ -259,15 +298,15 @@ export class MLLPServer extends EventEmitter {
    */
   private validateMessage(message: HL7Message): void {
     if (!message.messageType) {
-      throw new Error("Message type is missing");
+      throw new Error('Message type is missing');
     }
 
     if (!message.messageControlId) {
-      throw new Error("Message control ID is missing");
+      throw new Error('Message control ID is missing');
     }
 
     if (message.segments.length === 0) {
-      throw new Error("Message has no segments");
+      throw new Error('Message has no segments');
     }
   }
 
@@ -291,10 +330,7 @@ export class MLLPServer extends EventEmitter {
   /**
    * Type-safe event emitter methods
    */
-  on<K extends keyof MLLPServerEvents>(
-    event: K,
-    listener: MLLPServerEvents[K],
-  ): this {
+  on<K extends keyof MLLPServerEvents>(event: K, listener: MLLPServerEvents[K]): this {
     return super.on(event, listener as any);
   }
 

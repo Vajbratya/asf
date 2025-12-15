@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/table';
 import { Activity, CheckCircle2, XCircle, Clock, TrendingUp } from 'lucide-react';
 import { apiGet } from '@/lib/api';
+import { OnboardingChecklist } from '@/components/onboarding-checklist';
 
 export default function DashboardPage() {
   const [metrics, setMetrics] = useState<any>(null);
@@ -93,6 +94,9 @@ export default function DashboardPage() {
         <h1 className="text-3xl font-bold">Dashboard</h1>
         <p className="text-muted-foreground">Overview of your healthcare integration platform</p>
       </div>
+
+      {/* Onboarding Checklist */}
+      <OnboardingChecklist />
 
       {/* Metric Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">

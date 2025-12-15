@@ -5,6 +5,7 @@ import { logger } from 'hono/logger';
 import { prettyJSON } from 'hono/pretty-json';
 import healthRouter from './routes/health';
 import v1Router from './routes/v1';
+import { stripeWebhook } from './routes/stripe-webhook';
 import { errorHandler } from './middleware/error-handler';
 import { env, getAllowedOrigins } from './lib/env';
 
@@ -23,6 +24,7 @@ app.use(
 
 // Routes
 app.route('/health', healthRouter);
+app.route('/webhooks/stripe', stripeWebhook);
 app.route('/api/v1', v1Router);
 
 // Error handling

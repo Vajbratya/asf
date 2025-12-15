@@ -5,42 +5,60 @@
  * Handles escape sequences and generates ACK/NAK responses
  */
 
-import {
-  HL7Delimiters,
-  HL7Message,
-  HL7Segment,
-  HL7Acknowledgment,
-} from "./types";
+import { HL7Delimiters, HL7Message, HL7Segment, HL7Acknowledgment } from './types';
+import { HL7ParseError } from './errors';
 
 export class HL7Parser {
   private static readonly DEFAULT_DELIMITERS: HL7Delimiters = {
-    field: "|",
-    component: "^",
-    repetition: "~",
-    escape: "\\",
-    subcomponent: "&",
+    field: '|',
+    component: '^',
+    repetition: '~',
+    escape: '\\',
+    subcomponent: '&',
   };
 
   /**
-   * Parse an HL7 v2 message
+   * Parse an HL7 v2 message into a structured format
+   *
+   * @param message - Raw HL7 message string with segment separators (\r or \n)
+   * @returns Parsed HL7 message with segments, fields, and components
+   * @throws {HL7ParseError} If message format is invalid or cannot be parsed
+   *
+   * @example
+   * ```typescript
+   * const msg = HL7Parser.parse('MSH|^~\\&|APP|FAC|APP2|FAC2|20231215120000||ADT^A01|MSG001|P|2.5\rPID|1||12345');
+   * console.log(msg.messageType); // "ADT^A01"
+   * console.log(msg.messageControlId); // "MSG001"
+   * ```
    */
   static parse(message: string): HL7Message {
-    if (!message || message.trim().length === 0) {
-      throw new Error("Message is empty");
+    // Input validation
+    if (!message || typeof message !== 'string') {
+      throw new HL7ParseError(
+        'Invalid message input: message must be a non-empty string',
+        'INVALID_INPUT'
+      );
     }
 
-    const lines = message
-      .split(/\r?\n/)
-      .filter((line) => line.trim().length > 0);
+    if (message.trim().length === 0) {
+      throw new HL7ParseError('Message is empty', 'EMPTY_MESSAGE');
+    }
+
+    const lines = message.split(/\r?\n/).filter((line) => line.trim().length > 0);
 
     if (lines.length === 0) {
-      throw new Error("No segments found in message");
+      throw new HL7ParseError('No segments found in message', 'NO_SEGMENTS');
     }
 
     // First line must be MSH
     const mshLine = lines[0];
-    if (!mshLine.startsWith("MSH")) {
-      throw new Error("Message must start with MSH segment");
+    if (!mshLine || !mshLine.startsWith('MSH')) {
+      throw new HL7ParseError('Message must start with MSH segment', 'INVALID_MSH', 'MSH');
+    }
+
+    // MSH must be at least 9 characters long to contain delimiters
+    if (mshLine.length < 9) {
+      throw new HL7ParseError('MSH segment too short', 'MSH_TOO_SHORT', 'MSH');
     }
 
     // Extract delimiters from MSH segment
@@ -55,8 +73,8 @@ export class HL7Parser {
 
     // Extract message type and control ID from MSH
     const mshSegment = segments[0];
-    const messageType = this.getField(mshSegment, 9, 0) || "UNKNOWN";
-    const messageControlId = this.getField(mshSegment, 10, 0) || "";
+    const messageType = this.getField(mshSegment, 9, 0) || 'UNKNOWN';
+    const messageControlId = this.getField(mshSegment, 10, 0) || '';
 
     return {
       messageType,
@@ -69,35 +87,41 @@ export class HL7Parser {
 
   /**
    * Extract delimiters from MSH segment
+   *
+   * @param mshLine - The MSH segment line
+   * @returns Delimiters extracted from MSH-2 (encoding characters)
+   * @throws {HL7ParseError} If MSH segment is malformed
+   * @private
    */
   private static extractDelimiters(mshLine: string): HL7Delimiters {
     if (mshLine.length < 9) {
-      throw new Error("MSH segment too short to extract delimiters");
+      throw new HL7ParseError(
+        'MSH segment too short to extract delimiters',
+        'MSH_TOO_SHORT',
+        'MSH'
+      );
     }
 
     // MSH is special: MSH|^~\&|...
     // Position 3 is field separator (|)
     // Positions 4-7 are encoding characters (^~\&)
     return {
-      field: mshLine[3] || "|",
-      component: mshLine[4] || "^",
-      repetition: mshLine[5] || "~",
-      escape: mshLine[6] || "\\",
-      subcomponent: mshLine[7] || "&",
+      field: mshLine[3] || '|',
+      component: mshLine[4] || '^',
+      repetition: mshLine[5] || '~',
+      escape: mshLine[6] || '\\',
+      subcomponent: mshLine[7] || '&',
     };
   }
 
   /**
    * Parse a single segment
    */
-  private static parseSegment(
-    line: string,
-    delimiters: HL7Delimiters,
-  ): HL7Segment {
+  private static parseSegment(line: string, delimiters: HL7Delimiters): HL7Segment {
     const segmentName = line.substring(0, 3);
 
     // MSH is special - field separator is not really a field
-    if (segmentName === "MSH") {
+    if (segmentName === 'MSH') {
       return this.parseMSHSegment(line, delimiters);
     }
 
@@ -112,9 +136,7 @@ export class HL7Parser {
       const repetitions = fieldValue.split(delimiters.repetition);
 
       // Unescape each repetition
-      const unescapedRepetitions = repetitions.map((rep) =>
-        this.unescape(rep, delimiters),
-      );
+      const unescapedRepetitions = repetitions.map((rep) => this.unescape(rep, delimiters));
 
       fields.push(unescapedRepetitions);
     }
@@ -128,18 +150,12 @@ export class HL7Parser {
   /**
    * Parse MSH segment (special case)
    */
-  private static parseMSHSegment(
-    line: string,
-    delimiters: HL7Delimiters,
-  ): HL7Segment {
+  private static parseMSHSegment(line: string, delimiters: HL7Delimiters): HL7Segment {
     const fields: string[][] = [];
 
     // Field 1 is the encoding characters
     const encodingChars =
-      delimiters.component +
-      delimiters.repetition +
-      delimiters.escape +
-      delimiters.subcomponent;
+      delimiters.component + delimiters.repetition + delimiters.escape + delimiters.subcomponent;
     fields.push([encodingChars]);
 
     // Split rest of line by field separator
@@ -149,14 +165,12 @@ export class HL7Parser {
 
     for (const part of parts) {
       const repetitions = part.split(delimiters.repetition);
-      const unescapedRepetitions = repetitions.map((rep) =>
-        this.unescape(rep, delimiters),
-      );
+      const unescapedRepetitions = repetitions.map((rep) => this.unescape(rep, delimiters));
       fields.push(unescapedRepetitions);
     }
 
     return {
-      name: "MSH",
+      name: 'MSH',
       fields,
     };
   }
@@ -181,50 +195,44 @@ export class HL7Parser {
       .replace(/\\T\\/g, delimiters.subcomponent)
       .replace(/\\R\\/g, delimiters.repetition)
       .replace(/\\E\\/g, delimiters.escape)
-      .replace(/\\X([0-9A-Fa-f]{2})\\/g, (_, hex) =>
-        String.fromCharCode(parseInt(hex, 16)),
-      );
+      .replace(/\\X([0-9A-Fa-f]{2})\\/g, (_, hex) => String.fromCharCode(parseInt(hex, 16)));
   }
 
   /**
-   * Escape special characters for HL7
+   * Escape special characters for HL7 transmission
+   *
+   * Converts delimiter characters to their escape sequences:
+   * - | → \\F\\  (field separator)
+   * - ^ → \\S\\  (component separator)
+   * - & → \\T\\  (subcomponent separator)
+   * - ~ → \\R\\  (repetition separator)
+   * - \\ → \\E\\ (escape character)
+   *
+   * @param value - String to escape
+   * @param delimiters - HL7 delimiters configuration
+   * @returns Escaped string safe for HL7 transmission
+   *
+   * @example
+   * ```typescript
+   * const escaped = HL7Parser.escape('Name | with ^ special', delimiters);
+   * // Returns: "Name \\F\\ with \\S\\ special"
+   * ```
    */
   static escape(value: string, delimiters: HL7Delimiters): string {
     return value
+      .replace(new RegExp(delimiters.escape.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), '\\E\\')
+      .replace(new RegExp(delimiters.field.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), '\\F\\')
       .replace(
-        new RegExp(
-          delimiters.escape.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
-          "g",
-        ),
-        "\\E\\",
+        new RegExp(delimiters.component.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'),
+        '\\S\\'
       )
       .replace(
-        new RegExp(
-          delimiters.field.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
-          "g",
-        ),
-        "\\F\\",
+        new RegExp(delimiters.subcomponent.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'),
+        '\\T\\'
       )
       .replace(
-        new RegExp(
-          delimiters.component.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
-          "g",
-        ),
-        "\\S\\",
-      )
-      .replace(
-        new RegExp(
-          delimiters.subcomponent.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
-          "g",
-        ),
-        "\\T\\",
-      )
-      .replace(
-        new RegExp(
-          delimiters.repetition.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
-          "g",
-        ),
-        "\\R\\",
+        new RegExp(delimiters.repetition.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'),
+        '\\R\\'
       );
   }
 
@@ -234,11 +242,12 @@ export class HL7Parser {
    * @param fieldIndex Field index (1-based, as in HL7 spec)
    * @param repetition Repetition index (0-based)
    */
-  static getField(
-    segment: HL7Segment,
-    fieldIndex: number,
-    repetition: number = 0,
-  ): string | null {
+  static getField(segment: HL7Segment, fieldIndex: number, repetition: number = 0): string | null {
+    // Null/undefined checks
+    if (!segment || !segment.fields) {
+      return null;
+    }
+
     // Convert to 0-based index
     const index = fieldIndex - 1;
 
@@ -247,7 +256,7 @@ export class HL7Parser {
     }
 
     const field = segment.fields[index];
-    if (repetition < 0 || repetition >= field.length) {
+    if (!field || repetition < 0 || repetition >= field.length) {
       return null;
     }
 
@@ -263,8 +272,13 @@ export class HL7Parser {
   static getComponent(
     fieldValue: string,
     componentIndex: number,
-    delimiters: HL7Delimiters,
+    delimiters: HL7Delimiters
   ): string | null {
+    // Null/undefined checks
+    if (!fieldValue || !delimiters || !delimiters.component) {
+      return null;
+    }
+
     const components = fieldValue.split(delimiters.component);
     const index = componentIndex - 1;
 
@@ -276,15 +290,32 @@ export class HL7Parser {
   }
 
   /**
-   * Get a segment by name
+   * Get a specific segment by name and occurrence
+   *
+   * @param message - Parsed HL7 message
+   * @param segmentName - Three-letter segment name (e.g., "PID", "OBX")
+   * @param occurrence - Zero-based occurrence index (default: 0)
+   * @returns The segment if found, null otherwise
+   *
+   * @example
+   * ```typescript
+   * const msg = HL7Parser.parse(message);
+   * const pidSegment = HL7Parser.getSegment(msg, 'PID'); // First PID
+   * const obx2 = HL7Parser.getSegment(msg, 'OBX', 1); // Second OBX
+   * ```
    */
   static getSegment(
     message: HL7Message,
     segmentName: string,
-    occurrence: number = 0,
+    occurrence: number = 0
   ): HL7Segment | null {
-    const segments = message.segments.filter((s) => s.name === segmentName);
-    if (occurrence >= segments.length) {
+    // Null/undefined checks
+    if (!message || !message.segments || !segmentName) {
+      return null;
+    }
+
+    const segments = message.segments.filter((s) => s && s.name === segmentName);
+    if (occurrence < 0 || occurrence >= segments.length) {
       return null;
     }
     return segments[occurrence];
@@ -294,26 +325,40 @@ export class HL7Parser {
    * Get all segments by name
    */
   static getSegments(message: HL7Message, segmentName: string): HL7Segment[] {
-    return message.segments.filter((s) => s.name === segmentName);
+    // Null/undefined checks
+    if (!message || !message.segments || !segmentName) {
+      return [];
+    }
+
+    return message.segments.filter((s) => s && s.name === segmentName);
   }
 
   /**
-   * Generate ACK (acknowledgment) response
+   * Generate ACK (acknowledgment) response for an HL7 message
+   *
+   * @param messageControlId - Control ID from the original message (MSH-10)
+   * @param ackCode - Acknowledgment code: 'AA' (accept), 'AE' (error), 'AR' (reject)
+   * @param textMessage - Optional human-readable acknowledgment text (MSA-3)
+   * @param delimiters - HL7 delimiters configuration
+   * @returns Complete ACK message with MSH and MSA segments
+   *
+   * @example
+   * ```typescript
+   * const ack = HL7Parser.generateACK('MSG001', 'AA', 'Message accepted');
+   * console.log(ack.raw); // MSH|^~\&|...|ACK|...\rMSA|AA|MSG001|Message accepted\r
+   * ```
    */
   static generateACK(
     messageControlId: string,
-    ackCode: "AA" | "AE" | "AR" = "AA",
+    ackCode: 'AA' | 'AE' | 'AR' = 'AA',
     textMessage?: string,
-    delimiters: HL7Delimiters = HL7Parser.DEFAULT_DELIMITERS,
+    delimiters: HL7Delimiters = HL7Parser.DEFAULT_DELIMITERS
   ): HL7Acknowledgment {
     const timestamp = this.formatHL7DateTime(new Date());
     const newControlId = this.generateMessageControlId();
 
     const encodingChars =
-      delimiters.component +
-      delimiters.repetition +
-      delimiters.escape +
-      delimiters.subcomponent;
+      delimiters.component + delimiters.repetition + delimiters.escape + delimiters.subcomponent;
 
     const msh =
       `MSH${delimiters.field}${encodingChars}${delimiters.field}` +
@@ -323,14 +368,12 @@ export class HL7Parser {
 
     const msa =
       `MSA${delimiters.field}${ackCode}${delimiters.field}${messageControlId}` +
-      (textMessage
-        ? `${delimiters.field}${this.escape(textMessage, delimiters)}`
-        : "");
+      (textMessage ? `${delimiters.field}${this.escape(textMessage, delimiters)}` : '');
 
     const raw = `${msh}\r${msa}\r`;
 
     return {
-      messageType: ackCode === "AA" ? "ACK" : "NAK",
+      messageType: ackCode === 'AA' ? 'ACK' : 'NAK',
       messageControlId: newControlId,
       ackCode,
       textMessage,
@@ -344,9 +387,9 @@ export class HL7Parser {
   static generateNAK(
     messageControlId: string,
     errorMessage: string,
-    delimiters: HL7Delimiters = HL7Parser.DEFAULT_DELIMITERS,
+    delimiters: HL7Delimiters = HL7Parser.DEFAULT_DELIMITERS
   ): HL7Acknowledgment {
-    return this.generateACK(messageControlId, "AE", errorMessage, delimiters);
+    return this.generateACK(messageControlId, 'AE', errorMessage, delimiters);
   }
 
   /**
@@ -354,11 +397,11 @@ export class HL7Parser {
    */
   static formatHL7DateTime(date: Date): string {
     const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const day = String(date.getDate()).padStart(2, "0");
-    const hours = String(date.getHours()).padStart(2, "0");
-    const minutes = String(date.getMinutes()).padStart(2, "0");
-    const seconds = String(date.getSeconds()).padStart(2, "0");
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    const seconds = String(date.getSeconds()).padStart(2, '0');
 
     return `${year}${month}${day}${hours}${minutes}${seconds}`;
   }
@@ -406,29 +449,24 @@ export class HL7Parser {
     const lines: string[] = [];
 
     for (const segment of message.segments) {
-      if (segment.name === "MSH") {
+      if (segment.name === 'MSH') {
         lines.push(this.serializeMSHSegment(segment, message.delimiters));
       } else {
         lines.push(this.serializeSegment(segment, message.delimiters));
       }
     }
 
-    return lines.join("\r") + "\r";
+    return lines.join('\r') + '\r';
   }
 
   /**
    * Serialize a regular segment
    */
-  private static serializeSegment(
-    segment: HL7Segment,
-    delimiters: HL7Delimiters,
-  ): string {
+  private static serializeSegment(segment: HL7Segment, delimiters: HL7Delimiters): string {
     const parts = [segment.name];
 
     for (const field of segment.fields) {
-      const escapedRepetitions = field.map((rep) =>
-        this.escape(rep, delimiters),
-      );
+      const escapedRepetitions = field.map((rep) => this.escape(rep, delimiters));
       parts.push(escapedRepetitions.join(delimiters.repetition));
     }
 
@@ -438,24 +476,16 @@ export class HL7Parser {
   /**
    * Serialize MSH segment (special case)
    */
-  private static serializeMSHSegment(
-    segment: HL7Segment,
-    delimiters: HL7Delimiters,
-  ): string {
+  private static serializeMSHSegment(segment: HL7Segment, delimiters: HL7Delimiters): string {
     const encodingChars =
-      delimiters.component +
-      delimiters.repetition +
-      delimiters.escape +
-      delimiters.subcomponent;
+      delimiters.component + delimiters.repetition + delimiters.escape + delimiters.subcomponent;
 
     const parts = [`MSH${delimiters.field}${encodingChars}`];
 
     // Skip first field (encoding chars) as we already added it
     for (let i = 1; i < segment.fields.length; i++) {
       const field = segment.fields[i];
-      const escapedRepetitions = field.map((rep) =>
-        this.escape(rep, delimiters),
-      );
+      const escapedRepetitions = field.map((rep) => this.escape(rep, delimiters));
       parts.push(escapedRepetitions.join(delimiters.repetition));
     }
 

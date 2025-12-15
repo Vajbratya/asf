@@ -5,9 +5,9 @@
  * Handles MLLP framing and ACK/NAK responses
  */
 
-import * as net from "net";
-import { HL7Message, HL7Acknowledgment } from "../types";
-import { HL7Parser } from "../parser";
+import * as net from 'net';
+import { HL7Message, HL7Acknowledgment } from '../types';
+import { HL7Parser } from '../parser';
 
 export interface MLLPClientOptions {
   host: string;
@@ -23,14 +23,14 @@ export interface SendResult {
   error?: Error;
 }
 
-const VT = "\x0B"; // Vertical Tab (Start Block)
-const FS = "\x1C"; // File Separator (End Block)
-const CR = "\x0D"; // Carriage Return (Terminator)
+const VT = '\x0B'; // Vertical Tab (Start Block)
+const FS = '\x1C'; // File Separator (End Block)
+const CR = '\x0D'; // Carriage Return (Terminator)
 
 export class MLLPClient {
   private options: Required<MLLPClientOptions>;
   private socket: net.Socket | null = null;
-  private buffer = "";
+  private buffer = '';
   private pendingResponse: {
     resolve: (ack: HL7Acknowledgment) => void;
     reject: (error: Error) => void;
@@ -53,8 +53,7 @@ export class MLLPClient {
   async send(message: HL7Message | string): Promise<SendResult> {
     try {
       // Convert to string if HL7Message
-      const messageText =
-        typeof message === "string" ? message : HL7Parser.serialize(message);
+      const messageText = typeof message === 'string' ? message : HL7Parser.serialize(message);
 
       // Ensure connection
       await this.connect();
@@ -68,7 +67,7 @@ export class MLLPClient {
       }
 
       return {
-        success: acknowledgment.ackCode === "AA",
+        success: acknowledgment.ackCode === 'AA',
         acknowledgment,
       };
     } catch (error) {
@@ -93,24 +92,24 @@ export class MLLPClient {
       }
 
       this.socket = new net.Socket();
-      this.buffer = "";
+      this.buffer = '';
 
       // Set connection timeout
       const connectTimeout = setTimeout(() => {
         this.socket?.destroy();
-        reject(new Error("Connection timeout"));
+        reject(new Error('Connection timeout'));
       }, this.options.connectTimeout);
 
-      this.socket.on("connect", () => {
+      this.socket.on('connect', () => {
         clearTimeout(connectTimeout);
         resolve();
       });
 
-      this.socket.on("data", (data) => {
+      this.socket.on('data', (data) => {
         this.handleData(data);
       });
 
-      this.socket.on("error", (error) => {
+      this.socket.on('error', (error) => {
         clearTimeout(connectTimeout);
         if (this.pendingResponse) {
           this.pendingResponse.reject(error);
@@ -119,10 +118,10 @@ export class MLLPClient {
         }
       });
 
-      this.socket.on("close", () => {
+      this.socket.on('close', () => {
         this.socket = null;
         if (this.pendingResponse) {
-          this.pendingResponse.reject(new Error("Connection closed"));
+          this.pendingResponse.reject(new Error('Connection closed'));
           clearTimeout(this.pendingResponse.timeout);
           this.pendingResponse = null;
         }
@@ -142,7 +141,7 @@ export class MLLPClient {
         return;
       }
 
-      this.socket.once("close", () => {
+      this.socket.once('close', () => {
         resolve();
       });
 
@@ -155,30 +154,40 @@ export class MLLPClient {
    */
   private sendAndWaitForAck(messageText: string): Promise<HL7Acknowledgment> {
     return new Promise((resolve, reject) => {
-      if (!this.socket || this.socket.destroyed) {
-        reject(new Error("Not connected"));
-        return;
-      }
-
-      // Set up response handler
-      const timeout = setTimeout(() => {
-        this.pendingResponse = null;
-        reject(new Error("Response timeout"));
-      }, this.options.timeout);
-
-      this.pendingResponse = { resolve, reject, timeout };
-
-      // Frame message with MLLP delimiters
-      const framedMessage = VT + messageText + FS + CR;
-
-      // Send message
-      this.socket.write(framedMessage, (error) => {
-        if (error) {
-          clearTimeout(timeout);
-          this.pendingResponse = null;
-          reject(error);
+      try {
+        // Input validation
+        if (!messageText || typeof messageText !== 'string') {
+          reject(new Error('Invalid message: message must be a non-empty string'));
+          return;
         }
-      });
+
+        if (!this.socket || this.socket.destroyed) {
+          reject(new Error('Not connected'));
+          return;
+        }
+
+        // Set up response handler
+        const timeout = setTimeout(() => {
+          this.pendingResponse = null;
+          reject(new Error('Response timeout'));
+        }, this.options.timeout);
+
+        this.pendingResponse = { resolve, reject, timeout };
+
+        // Frame message with MLLP delimiters
+        const framedMessage = VT + messageText + FS + CR;
+
+        // Send message
+        this.socket.write(framedMessage, (error) => {
+          if (error) {
+            clearTimeout(timeout);
+            this.pendingResponse = null;
+            reject(new Error(`Failed to send message: ${error.message}`));
+          }
+        });
+      } catch (error) {
+        reject(error as Error);
+      }
     });
   }
 
@@ -186,15 +195,49 @@ export class MLLPClient {
    * Handle incoming data
    */
   private handleData(data: Buffer): void {
-    // Append to buffer
-    this.buffer += data.toString("utf-8");
+    try {
+      // Null check
+      if (!data) {
+        return;
+      }
 
-    // Try to extract ACK message
-    const ack = this.extractAcknowledgment();
-    if (ack && this.pendingResponse) {
-      clearTimeout(this.pendingResponse.timeout);
-      this.pendingResponse.resolve(ack);
-      this.pendingResponse = null;
+      // Append to buffer with error handling
+      try {
+        this.buffer += data.toString('utf-8');
+      } catch (err) {
+        if (this.pendingResponse) {
+          this.pendingResponse.reject(new Error(`Failed to decode data: ${err}`));
+          clearTimeout(this.pendingResponse.timeout);
+          this.pendingResponse = null;
+        }
+        return;
+      }
+
+      // Prevent buffer overflow
+      if (this.buffer.length > 1024 * 1024) {
+        // 1MB limit
+        if (this.pendingResponse) {
+          this.pendingResponse.reject(new Error('Buffer size exceeded maximum limit (1MB)'));
+          clearTimeout(this.pendingResponse.timeout);
+          this.pendingResponse = null;
+        }
+        this.buffer = '';
+        return;
+      }
+
+      // Try to extract ACK message
+      const ack = this.extractAcknowledgment();
+      if (ack && this.pendingResponse) {
+        clearTimeout(this.pendingResponse.timeout);
+        this.pendingResponse.resolve(ack);
+        this.pendingResponse = null;
+      }
+    } catch (error) {
+      if (this.pendingResponse) {
+        this.pendingResponse.reject(error as Error);
+        clearTimeout(this.pendingResponse.timeout);
+        this.pendingResponse = null;
+      }
     }
   }
 
@@ -226,18 +269,17 @@ export class MLLPClient {
       const message = HL7Parser.parse(messageText);
 
       // Extract MSA segment (Message Acknowledgment)
-      const msaSegment = HL7Parser.getSegment(message, "MSA");
+      const msaSegment = HL7Parser.getSegment(message, 'MSA');
       if (!msaSegment) {
-        throw new Error("MSA segment not found in acknowledgment");
+        throw new Error('MSA segment not found in acknowledgment');
       }
 
-      const ackCode =
-        (HL7Parser.getField(msaSegment, 1) as "AA" | "AE" | "AR") || "AE";
-      const messageControlId = HL7Parser.getField(msaSegment, 2) || "";
+      const ackCode = (HL7Parser.getField(msaSegment, 1) as 'AA' | 'AE' | 'AR') || 'AE';
+      const messageControlId = HL7Parser.getField(msaSegment, 2) || '';
       const textMessage = HL7Parser.getField(msaSegment, 3) || undefined;
 
       return {
-        messageType: ackCode === "AA" ? "ACK" : "NAK",
+        messageType: ackCode === 'AA' ? 'ACK' : 'NAK',
         messageControlId,
         ackCode,
         textMessage,
@@ -246,10 +288,10 @@ export class MLLPClient {
     } catch (error) {
       // Return error as NAK
       return {
-        messageType: "NAK",
-        messageControlId: "",
-        ackCode: "AE",
-        textMessage: error instanceof Error ? error.message : "Unknown error",
+        messageType: 'NAK',
+        messageControlId: '',
+        ackCode: 'AE',
+        textMessage: error instanceof Error ? error.message : 'Unknown error',
         raw: messageText,
       };
     }

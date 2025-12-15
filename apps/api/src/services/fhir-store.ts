@@ -1,5 +1,11 @@
 import { PrismaClient, Prisma } from '@prisma/client';
-import { FhirResource, Bundle, BundleEntry, OperationOutcome } from '../types/fhir';
+import {
+  FhirResource,
+  Bundle,
+  BundleEntry,
+  OperationOutcome,
+  CapabilityStatement,
+} from '../types/fhir';
 import {
   createOperationOutcome,
   generateResourceId,
@@ -474,5 +480,410 @@ export class FHIRStore {
         this.prisma = originalPrisma;
       }
     });
+  }
+
+  /**
+   * Conditional Create - Create resource only if search criteria don't match existing resource
+   * @param resource Resource to create
+   * @param searchCriteria Search parameters to check for existing resources
+   * @returns Created resource or existing resource if match found
+   */
+  async createConditional(
+    resource: FhirResource,
+    searchCriteria: Record<string, string>
+  ): Promise<{ resource: FhirResource; created: boolean }> {
+    this.checkAuth();
+
+    // Search for existing resources matching criteria
+    const existingResources = await this.prisma.fhirResource.findMany({
+      where: {
+        resourceType: resource.resourceType,
+        deleted: false,
+        // Build search conditions based on criteria
+        AND: Object.entries(searchCriteria).map(([key, value]) => ({
+          content: {
+            path: [key],
+            equals: value,
+          },
+        })),
+      },
+      orderBy: {
+        versionId: 'desc',
+      },
+      take: 1,
+    });
+
+    if (existingResources.length > 0) {
+      // Resource exists, return it without creating
+      return {
+        resource: existingResources[0].content as FhirResource,
+        created: false,
+      };
+    }
+
+    // No match found, create new resource
+    const created = await this.create(resource);
+    return {
+      resource: created,
+      created: true,
+    };
+  }
+
+  /**
+   * Get version history for a specific resource
+   * @param type Resource type
+   * @param id Resource ID
+   * @returns Bundle containing all versions of the resource
+   */
+  async history(type: string, id: string): Promise<Bundle> {
+    this.checkAuth();
+
+    // Get all versions of the resource, including deleted ones
+    const versions = await this.prisma.fhirResource.findMany({
+      where: {
+        resourceType: type,
+        resourceId: id,
+      },
+      orderBy: {
+        versionId: 'desc',
+      },
+    });
+
+    if (versions.length === 0) {
+      throw new HTTPException(404, { message: `Resource ${type}/${id} not found` });
+    }
+
+    // Audit log
+    await this.auditLog('history', type, id, {
+      versionCount: versions.length,
+    });
+
+    return {
+      resourceType: 'Bundle',
+      type: 'history',
+      total: versions.length,
+      entry: versions.map((v) => ({
+        fullUrl: `${type}/${id}/_history/${v.versionId}`,
+        resource: v.content as FhirResource,
+        request: {
+          method: v.deleted ? 'DELETE' : v.versionId === 1 ? 'POST' : 'PUT',
+          url: `${type}/${id}`,
+        },
+        response: {
+          status: v.deleted ? '204 No Content' : '200 OK',
+          etag: `W/"${v.versionId}"`,
+          lastModified: v.updatedAt.toISOString(),
+        },
+      })),
+    };
+  }
+
+  /**
+   * Get version history for all resources of a type
+   * @param type Resource type
+   * @returns Bundle containing version history
+   */
+  async historyType(type: string): Promise<Bundle> {
+    this.checkAuth();
+
+    // Get all versions for this resource type, limited to recent history
+    const versions = await this.prisma.fhirResource.findMany({
+      where: {
+        resourceType: type,
+      },
+      orderBy: [
+        {
+          updatedAt: 'desc',
+        },
+        {
+          versionId: 'desc',
+        },
+      ],
+      take: 100, // Limit to 100 most recent versions
+    });
+
+    // Audit log
+    await this.auditLog('history-type', type, '*', {
+      versionCount: versions.length,
+    });
+
+    return {
+      resourceType: 'Bundle',
+      type: 'history',
+      total: versions.length,
+      entry: versions.map((v) => ({
+        fullUrl: `${type}/${v.resourceId}/_history/${v.versionId}`,
+        resource: v.content as FhirResource,
+        request: {
+          method: v.deleted ? 'DELETE' : v.versionId === 1 ? 'POST' : 'PUT',
+          url: `${type}/${v.resourceId}`,
+        },
+        response: {
+          status: v.deleted ? '204 No Content' : '200 OK',
+          etag: `W/"${v.versionId}"`,
+          lastModified: v.updatedAt.toISOString(),
+        },
+      })),
+    };
+  }
+
+  /**
+   * Validate a FHIR resource without persisting it
+   * @param resource Resource to validate
+   * @returns OperationOutcome with validation results
+   */
+  async validate(resource: FhirResource): Promise<OperationOutcome> {
+    this.checkAuth();
+
+    const issues: OperationOutcome['issue'] = [];
+
+    // Basic structure validation
+    if (!validateResourceStructure(resource)) {
+      issues.push({
+        severity: 'error',
+        code: 'structure',
+        diagnostics: 'Invalid FHIR resource structure',
+      });
+    }
+
+    // BR-Core profile validation for Patient resources
+    if (resource.resourceType === 'Patient') {
+      const validationResult = this.validator.validatePatient(resource as any);
+      if (validationResult) {
+        issues.push(...validationResult.issue);
+      }
+    }
+
+    // If no issues found, validation passed
+    if (issues.length === 0) {
+      return {
+        resourceType: 'OperationOutcome',
+        issue: [
+          {
+            severity: 'information',
+            code: 'informational',
+            diagnostics: 'Validation successful - resource is valid',
+          },
+        ],
+      };
+    }
+
+    return {
+      resourceType: 'OperationOutcome',
+      issue: issues,
+    };
+  }
+
+  /**
+   * Get FHIR server capabilities
+   * @returns CapabilityStatement describing server capabilities
+   */
+  capabilities(): CapabilityStatement {
+    return {
+      resourceType: 'CapabilityStatement',
+      status: 'active',
+      date: new Date().toISOString(),
+      kind: 'instance',
+      fhirVersion: '4.0.1',
+      format: ['application/fhir+json'],
+      patchFormat: ['application/json-patch+json'],
+      implementation: {
+        description: 'IntegraSaúde FHIR Server - BR-Core Compliant',
+        url: process.env.FHIR_BASE_URL || 'http://localhost:3000/fhir',
+      },
+      rest: [
+        {
+          mode: 'server',
+          documentation: 'IntegraSaúde FHIR Server supporting Brazilian FHIR profiles (BR-Core)',
+          security: {
+            cors: true,
+            description: 'OAuth2 authentication required for all operations',
+          },
+          resource: [
+            {
+              type: 'Patient',
+              profile: 'http://www.saude.gov.br/fhir/r4/StructureDefinition/BRIndividuo-1.0',
+              supportedProfile: [
+                'http://www.saude.gov.br/fhir/r4/StructureDefinition/BRIndividuo-1.0',
+              ],
+              interaction: [
+                { code: 'read', documentation: 'Read a Patient resource by ID' },
+                { code: 'create', documentation: 'Create a new Patient resource' },
+                { code: 'update', documentation: 'Update an existing Patient resource' },
+                { code: 'delete', documentation: 'Delete a Patient resource (soft delete)' },
+                {
+                  code: 'search-type',
+                  documentation: 'Search for Patient resources',
+                },
+                {
+                  code: 'history-instance',
+                  documentation: 'Get version history for a Patient',
+                },
+              ],
+              versioning: 'versioned',
+              readHistory: true,
+              updateCreate: false,
+              conditionalCreate: true,
+              conditionalUpdate: false,
+              conditionalDelete: 'not-supported',
+              searchParam: [
+                {
+                  name: 'identifier',
+                  type: 'token',
+                  documentation: 'Search by patient identifier (CPF or CNS)',
+                },
+                {
+                  name: 'cpf',
+                  type: 'token',
+                  documentation: 'Search by CPF (Brazilian individual taxpayer ID)',
+                },
+                {
+                  name: 'cns',
+                  type: 'token',
+                  documentation: 'Search by CNS (Brazilian national health card number)',
+                },
+                {
+                  name: 'name',
+                  type: 'string',
+                  documentation: 'Search by patient name (family or given)',
+                },
+                {
+                  name: 'family',
+                  type: 'string',
+                  documentation: 'Search by family name',
+                },
+                {
+                  name: 'given',
+                  type: 'string',
+                  documentation: 'Search by given name',
+                },
+                {
+                  name: 'birthdate',
+                  type: 'date',
+                  documentation: 'Search by birth date',
+                },
+                {
+                  name: 'gender',
+                  type: 'token',
+                  documentation: 'Search by gender',
+                },
+              ],
+            },
+            {
+              type: 'Encounter',
+              interaction: [
+                { code: 'read' },
+                { code: 'create' },
+                { code: 'update' },
+                { code: 'delete' },
+                { code: 'search-type' },
+                { code: 'history-instance' },
+              ],
+              versioning: 'versioned',
+              readHistory: true,
+              searchParam: [
+                {
+                  name: 'patient',
+                  type: 'reference',
+                  documentation: 'Search by patient reference',
+                },
+                {
+                  name: 'status',
+                  type: 'token',
+                  documentation: 'Search by encounter status',
+                },
+                {
+                  name: 'date',
+                  type: 'date',
+                  documentation: 'Search by encounter date',
+                },
+                {
+                  name: 'class',
+                  type: 'token',
+                  documentation: 'Search by encounter class',
+                },
+              ],
+            },
+            {
+              type: 'DiagnosticReport',
+              interaction: [
+                { code: 'read' },
+                { code: 'create' },
+                { code: 'update' },
+                { code: 'delete' },
+                { code: 'search-type' },
+                { code: 'history-instance' },
+              ],
+              versioning: 'versioned',
+              readHistory: true,
+              searchParam: [
+                {
+                  name: 'patient',
+                  type: 'reference',
+                  documentation: 'Search by patient reference',
+                },
+                {
+                  name: 'status',
+                  type: 'token',
+                  documentation: 'Search by report status',
+                },
+                {
+                  name: 'category',
+                  type: 'token',
+                  documentation: 'Search by report category',
+                },
+                {
+                  name: 'code',
+                  type: 'token',
+                  documentation: 'Search by report code',
+                },
+                {
+                  name: 'date',
+                  type: 'date',
+                  documentation: 'Search by report date',
+                },
+              ],
+            },
+          ],
+          interaction: [
+            {
+              code: 'create',
+              documentation: 'Create a new resource',
+            },
+            {
+              code: 'read',
+              documentation: 'Read a resource',
+            },
+            {
+              code: 'update',
+              documentation: 'Update a resource',
+            },
+            {
+              code: 'delete',
+              documentation: 'Delete a resource',
+            },
+            {
+              code: 'search-type',
+              documentation: 'Search resources',
+            },
+            {
+              code: 'history-instance',
+              documentation: 'Get version history for a resource',
+            },
+            {
+              code: 'history-type',
+              documentation: 'Get version history for a resource type',
+            },
+          ],
+          operation: [
+            {
+              name: 'validate',
+              definition: 'http://hl7.org/fhir/OperationDefinition/Resource-validate',
+              documentation: 'Validate a resource without persisting it',
+            },
+          ],
+        },
+      ],
+    };
   }
 }

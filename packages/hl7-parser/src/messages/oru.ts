@@ -6,8 +6,8 @@
  * Handles embedded PDFs (Base64 in OBX-5)
  */
 
-import { HL7Message, Observation, DiagnosticReport } from "../types";
-import { HL7Parser } from "../parser";
+import { HL7Message, HL7Segment, Observation, DiagnosticReport } from '../types';
+import { HL7Parser } from '../parser';
 
 export interface ORUMessage {
   patient?: {
@@ -25,15 +25,13 @@ export class ORUParser {
     const messageType = message.messageType;
 
     // Validate message type
-    if (!messageType.startsWith("ORU^R")) {
+    if (!messageType.startsWith('ORU^R')) {
       throw new Error(`Not an ORU message: ${messageType}`);
     }
 
     // Extract patient info from PID if present
-    const pidSegment = HL7Parser.getSegment(message, "PID");
-    const patient = pidSegment
-      ? this.parsePatientInfo(message, pidSegment)
-      : undefined;
+    const pidSegment = HL7Parser.getSegment(message, 'PID');
+    const patient = pidSegment ? this.parsePatientInfo(message, pidSegment) : undefined;
 
     // Parse diagnostic report from OBR + OBX segments
     const report = this.parseDiagnosticReport(message);
@@ -47,21 +45,26 @@ export class ORUParser {
   /**
    * Parse patient info from PID segment
    */
-  private static parsePatientInfo(message: HL7Message, pidSegment: any): any {
+  private static parsePatientInfo(
+    message: HL7Message,
+    pidSegment: HL7Segment
+  ): {
+    id: string;
+    name?: string;
+  } {
     const delimiters = message.delimiters;
 
     // PID-3: Patient ID
-    const patientId = HL7Parser.getField(pidSegment, 3) || "";
+    const patientId = HL7Parser.getField(pidSegment, 3) || '';
     const idComponents = patientId.split(delimiters.component);
-    const id = idComponents[0] || "";
+    const id = idComponents[0] || '';
 
     // PID-5: Patient Name
-    const patientName = HL7Parser.getField(pidSegment, 5) || "";
+    const patientName = HL7Parser.getField(pidSegment, 5) || '';
     const nameComponents = patientName.split(delimiters.component);
-    const family = nameComponents[0] || "";
-    const given = nameComponents[1] || "";
-    const name =
-      given && family ? `${given} ${family}` : given || family || undefined;
+    const family = nameComponents[0] || '';
+    const given = nameComponents[1] || '';
+    const name = given && family ? `${given} ${family}` : given || family || undefined;
 
     return {
       id,
@@ -78,16 +81,16 @@ export class ORUParser {
     const delimiters = message.delimiters;
 
     // Get OBR segment (observation request/report header)
-    const obrSegment = HL7Parser.getSegment(message, "OBR");
+    const obrSegment = HL7Parser.getSegment(message, 'OBR');
     if (!obrSegment) {
-      throw new Error("ORU message missing OBR segment");
+      throw new Error('ORU message missing OBR segment');
     }
 
     // OBR-2: Placer Order Number
     const orderNumber = HL7Parser.getField(obrSegment, 2) || undefined;
 
     // OBR-4: Universal Service ID (Test Code^Test Name^Coding System)
-    const serviceIdField = HL7Parser.getField(obrSegment, 4) || "";
+    const serviceIdField = HL7Parser.getField(obrSegment, 4) || '';
     const serviceIdComponents = serviceIdField.split(delimiters.component);
     const universalServiceId = serviceIdComponents[0] || undefined;
 
@@ -101,10 +104,7 @@ export class ORUParser {
     const resultStatus = HL7Parser.getField(obrSegment, 25) || undefined;
 
     // OBR-3 or OBR-2 as report ID
-    const reportId =
-      HL7Parser.getField(obrSegment, 3) ||
-      orderNumber ||
-      this.generateReportId();
+    const reportId = HL7Parser.getField(obrSegment, 3) || orderNumber || this.generateReportId();
 
     // Parse all OBX segments (observations)
     const observations = this.parseObservations(message);
@@ -126,31 +126,31 @@ export class ORUParser {
    */
   private static parseObservations(message: HL7Message): Observation[] {
     const delimiters = message.delimiters;
-    const obxSegments = HL7Parser.getSegments(message, "OBX");
+    const obxSegments = HL7Parser.getSegments(message, 'OBX');
     const observations: Observation[] = [];
 
     for (const obxSegment of obxSegments) {
       // OBX-1: Set ID
-      const setId = HL7Parser.getField(obxSegment, 1) || "";
+      const setId = HL7Parser.getField(obxSegment, 1) || '';
 
       // OBX-2: Value Type (NM=Numeric, ST=String, TX=Text, ED=Encapsulated Data, etc.)
-      const valueType = HL7Parser.getField(obxSegment, 2) || "";
+      const valueType = HL7Parser.getField(obxSegment, 2) || '';
 
       // OBX-3: Observation Identifier (Code^Text^Coding System)
-      const identifierField = HL7Parser.getField(obxSegment, 3) || "";
+      const identifierField = HL7Parser.getField(obxSegment, 3) || '';
       const identifierComponents = identifierField.split(delimiters.component);
-      const identifier = identifierComponents[0] || "";
-      const identifierText = identifierComponents[1] || "";
+      const identifier = identifierComponents[0] || '';
+      const identifierText = identifierComponents[1] || '';
 
       // OBX-5: Observation Value
       let value = HL7Parser.getField(obxSegment, 5);
 
       // Handle different value types
-      if (valueType === "NM" && value) {
+      if (valueType === 'NM' && value) {
         // Numeric value
         const numValue = parseFloat(value);
         value = isNaN(numValue) ? value : numValue;
-      } else if (valueType === "ED" && value) {
+      } else if (valueType === 'ED' && value) {
         // Encapsulated Data (e.g., PDF)
         // Format: DataType^DataSubtype^Encoding^Data
         const edComponents = value.split(delimiters.component);
@@ -163,8 +163,8 @@ export class ORUParser {
             type: dataType,
             encoding: encoding,
             data: data,
-            isPDF: dataType === "PDF" || dataType === "Application/PDF",
-            isBase64: encoding === "Base64" || encoding === "base64",
+            isPDF: dataType === 'PDF' || dataType === 'Application/PDF',
+            isBase64: encoding === 'Base64' || encoding === 'base64',
           };
         }
       }
@@ -193,7 +193,7 @@ export class ORUParser {
       observations.push({
         id: setId,
         type: valueType,
-        identifier: `${identifier}${identifierText ? ` - ${identifierText}` : ""}`,
+        identifier: `${identifier}${identifierText ? ` - ${identifierText}` : ''}`,
         value,
         units,
         referenceRange,
@@ -227,11 +227,7 @@ export class ORUParser {
    */
   static extractPDF(report: DiagnosticReport): string | null {
     for (const obs of report.observations) {
-      if (
-        typeof obs.value === "object" &&
-        obs.value.isPDF &&
-        obs.value.isBase64
-      ) {
+      if (typeof obs.value === 'object' && obs.value.isPDF && obs.value.isBase64) {
         return obs.value.data;
       }
     }
@@ -243,19 +239,19 @@ export class ORUParser {
    */
   static getResultStatusDescription(status: string): string {
     const descriptions: Record<string, string> = {
-      P: "Preliminary",
-      F: "Final",
-      C: "Corrected",
-      X: "Cannot obtain results",
-      I: "In process",
-      S: "Partial",
-      R: "Not verified",
-      U: "Result updated",
-      W: "Wrong patient",
-      D: "Deleted",
+      P: 'Preliminary',
+      F: 'Final',
+      C: 'Corrected',
+      X: 'Cannot obtain results',
+      I: 'In process',
+      S: 'Partial',
+      R: 'Not verified',
+      U: 'Result updated',
+      W: 'Wrong patient',
+      D: 'Deleted',
     };
 
-    return descriptions[status] || "Unknown Status";
+    return descriptions[status] || 'Unknown Status';
   }
 
   /**
@@ -263,24 +259,24 @@ export class ORUParser {
    */
   static getAbnormalFlagDescription(flag: string): string {
     const descriptions: Record<string, string> = {
-      L: "Below low normal",
-      H: "Above high normal",
-      LL: "Below lower panic limits",
-      HH: "Above upper panic limits",
-      "<": "Below absolute low-off instrument scale",
-      ">": "Above absolute high-off instrument scale",
-      N: "Normal",
-      A: "Abnormal",
-      AA: "Very abnormal",
-      U: "Significant change up",
-      D: "Significant change down",
-      B: "Better",
-      W: "Worse",
-      S: "Susceptible",
-      R: "Resistant",
-      I: "Intermediate",
-      MS: "Moderately susceptible",
-      VS: "Very susceptible",
+      L: 'Below low normal',
+      H: 'Above high normal',
+      LL: 'Below lower panic limits',
+      HH: 'Above upper panic limits',
+      '<': 'Below absolute low-off instrument scale',
+      '>': 'Above absolute high-off instrument scale',
+      N: 'Normal',
+      A: 'Abnormal',
+      AA: 'Very abnormal',
+      U: 'Significant change up',
+      D: 'Significant change down',
+      B: 'Better',
+      W: 'Worse',
+      S: 'Susceptible',
+      R: 'Resistant',
+      I: 'Intermediate',
+      MS: 'Moderately susceptible',
+      VS: 'Very susceptible',
     };
 
     return descriptions[flag] || flag;
@@ -294,10 +290,8 @@ export class ORUParser {
       return false;
     }
 
-    const abnormalCodes = ["L", "H", "LL", "HH", "<", ">", "A", "AA"];
-    return observation.abnormalFlags.some((flag) =>
-      abnormalCodes.includes(flag),
-    );
+    const abnormalCodes = ['L', 'H', 'LL', 'HH', '<', '>', 'A', 'AA'];
+    return observation.abnormalFlags.some((flag) => abnormalCodes.includes(flag));
   }
 
   /**
@@ -308,9 +302,7 @@ export class ORUParser {
       return false;
     }
 
-    const criticalCodes = ["LL", "HH", "<", ">", "AA"];
-    return observation.abnormalFlags.some((flag) =>
-      criticalCodes.includes(flag),
-    );
+    const criticalCodes = ['LL', 'HH', '<', '>', 'AA'];
+    return observation.abnormalFlags.some((flag) => criticalCodes.includes(flag));
   }
 }

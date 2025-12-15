@@ -26,7 +26,7 @@ export interface Coding {
 }
 
 export interface Identifier {
-  use?: "usual" | "official" | "temp" | "secondary" | "old";
+  use?: 'usual' | 'official' | 'temp' | 'secondary' | 'old';
   type?: CodeableConcept;
   system?: string;
   value?: string;
@@ -52,14 +52,7 @@ export interface Reference {
 }
 
 export interface HumanName {
-  use?:
-    | "usual"
-    | "official"
-    | "temp"
-    | "nickname"
-    | "anonymous"
-    | "old"
-    | "maiden";
+  use?: 'usual' | 'official' | 'temp' | 'nickname' | 'anonymous' | 'old' | 'maiden';
   text?: string;
   family?: string;
   given?: string[];
@@ -69,16 +62,16 @@ export interface HumanName {
 }
 
 export interface ContactPoint {
-  system?: "phone" | "fax" | "email" | "pager" | "url" | "sms" | "other";
+  system?: 'phone' | 'fax' | 'email' | 'pager' | 'url' | 'sms' | 'other';
   value?: string;
-  use?: "home" | "work" | "temp" | "old" | "mobile";
+  use?: 'home' | 'work' | 'temp' | 'old' | 'mobile';
   rank?: number;
   period?: Period;
 }
 
 export interface Address {
-  use?: "home" | "work" | "temp" | "old" | "billing";
-  type?: "postal" | "physical" | "both";
+  use?: 'home' | 'work' | 'temp' | 'old' | 'billing';
+  type?: 'postal' | 'physical' | 'both';
   text?: string;
   line?: string[];
   city?: string;
@@ -91,12 +84,12 @@ export interface Address {
 
 // FHIR Patient Resource
 export interface Patient extends FhirResource {
-  resourceType: "Patient";
+  resourceType: 'Patient';
   identifier?: Identifier[];
   active?: boolean;
   name?: HumanName[];
   telecom?: ContactPoint[];
-  gender?: "male" | "female" | "other" | "unknown";
+  gender?: 'male' | 'female' | 'other' | 'unknown';
   birthDate?: string;
   address?: Address[];
   maritalStatus?: CodeableConcept;
@@ -111,7 +104,7 @@ export interface PatientContact {
   name?: HumanName;
   telecom?: ContactPoint[];
   address?: Address;
-  gender?: "male" | "female" | "other" | "unknown";
+  gender?: 'male' | 'female' | 'other' | 'unknown';
   organization?: Reference;
   period?: Period;
 }
@@ -123,18 +116,18 @@ export interface PatientCommunication {
 
 // FHIR Encounter Resource
 export interface Encounter extends FhirResource {
-  resourceType: "Encounter";
+  resourceType: 'Encounter';
   identifier?: Identifier[];
   status:
-    | "planned"
-    | "arrived"
-    | "triaged"
-    | "in-progress"
-    | "onleave"
-    | "finished"
-    | "cancelled"
-    | "entered-in-error"
-    | "unknown";
+    | 'planned'
+    | 'arrived'
+    | 'triaged'
+    | 'in-progress'
+    | 'onleave'
+    | 'finished'
+    | 'cancelled'
+    | 'entered-in-error'
+    | 'unknown';
   class: Coding;
   type?: CodeableConcept[];
   serviceType?: CodeableConcept;
@@ -175,27 +168,27 @@ export interface EncounterHospitalization {
 
 export interface EncounterLocation {
   location: Reference;
-  status?: "planned" | "active" | "reserved" | "completed";
+  status?: 'planned' | 'active' | 'reserved' | 'completed';
   physicalType?: CodeableConcept;
   period?: Period;
 }
 
 // FHIR DiagnosticReport Resource
 export interface DiagnosticReport extends FhirResource {
-  resourceType: "DiagnosticReport";
+  resourceType: 'DiagnosticReport';
   identifier?: Identifier[];
   basedOn?: Reference[];
   status:
-    | "registered"
-    | "partial"
-    | "preliminary"
-    | "final"
-    | "amended"
-    | "corrected"
-    | "appended"
-    | "cancelled"
-    | "entered-in-error"
-    | "unknown";
+    | 'registered'
+    | 'partial'
+    | 'preliminary'
+    | 'final'
+    | 'amended'
+    | 'corrected'
+    | 'appended'
+    | 'cancelled'
+    | 'entered-in-error'
+    | 'unknown';
   category?: CodeableConcept[];
   code: CodeableConcept;
   subject?: Reference;
@@ -232,17 +225,17 @@ export interface Attachment {
 
 // FHIR Bundle Resource
 export interface Bundle extends FhirResource {
-  resourceType: "Bundle";
+  resourceType: 'Bundle';
   type:
-    | "document"
-    | "message"
-    | "transaction"
-    | "transaction-response"
-    | "batch"
-    | "batch-response"
-    | "history"
-    | "searchset"
-    | "collection";
+    | 'document'
+    | 'message'
+    | 'transaction'
+    | 'transaction-response'
+    | 'batch'
+    | 'batch-response'
+    | 'history'
+    | 'searchset'
+    | 'collection';
   timestamp?: string;
   total?: number;
   link?: BundleLink[];
@@ -264,12 +257,12 @@ export interface BundleEntry {
 }
 
 export interface BundleEntrySearch {
-  mode?: "match" | "include" | "outcome";
+  mode?: 'match' | 'include' | 'outcome';
   score?: number;
 }
 
 export interface BundleEntryRequest {
-  method: "GET" | "HEAD" | "POST" | "PUT" | "DELETE" | "PATCH";
+  method: 'GET' | 'HEAD' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
   url: string;
   ifNoneMatch?: string;
   ifModifiedSince?: string;
@@ -287,15 +280,122 @@ export interface BundleEntryResponse {
 
 // FHIR OperationOutcome Resource
 export interface OperationOutcome extends FhirResource {
-  resourceType: "OperationOutcome";
+  resourceType: 'OperationOutcome';
   issue: OperationOutcomeIssue[];
 }
 
 export interface OperationOutcomeIssue {
-  severity: "fatal" | "error" | "warning" | "information";
+  severity: 'fatal' | 'error' | 'warning' | 'information';
   code: string;
   details?: CodeableConcept;
   diagnostics?: string;
   location?: string[];
   expression?: string[];
+}
+
+// FHIR CapabilityStatement Resource
+export interface CapabilityStatement extends FhirResource {
+  resourceType: 'CapabilityStatement';
+  url?: string;
+  version?: string;
+  name?: string;
+  title?: string;
+  status: 'draft' | 'active' | 'retired' | 'unknown';
+  experimental?: boolean;
+  date: string;
+  publisher?: string;
+  contact?: ContactDetail[];
+  description?: string;
+  kind: 'instance' | 'capability' | 'requirements';
+  instantiates?: string[];
+  software?: CapabilityStatementSoftware;
+  implementation?: CapabilityStatementImplementation;
+  fhirVersion: string;
+  format: string[];
+  patchFormat?: string[];
+  implementationGuide?: string[];
+  rest?: CapabilityStatementRest[];
+}
+
+export interface ContactDetail {
+  name?: string;
+  telecom?: ContactPoint[];
+}
+
+export interface CapabilityStatementSoftware {
+  name: string;
+  version?: string;
+  releaseDate?: string;
+}
+
+export interface CapabilityStatementImplementation {
+  description: string;
+  url?: string;
+}
+
+export interface CapabilityStatementRest {
+  mode: 'client' | 'server';
+  documentation?: string;
+  security?: CapabilityStatementSecurity;
+  resource?: CapabilityStatementResource[];
+  interaction?: CapabilityStatementInteraction[];
+  operation?: CapabilityStatementOperation[];
+}
+
+export interface CapabilityStatementSecurity {
+  cors?: boolean;
+  service?: CodeableConcept[];
+  description?: string;
+}
+
+export interface CapabilityStatementResource {
+  type: string;
+  profile?: string;
+  supportedProfile?: string[];
+  documentation?: string;
+  interaction?: CapabilityStatementInteraction[];
+  versioning?: 'no-version' | 'versioned' | 'versioned-update';
+  readHistory?: boolean;
+  updateCreate?: boolean;
+  conditionalCreate?: boolean;
+  conditionalRead?: 'not-supported' | 'modified-since' | 'not-match' | 'full-support';
+  conditionalUpdate?: boolean;
+  conditionalDelete?: 'not-supported' | 'single' | 'multiple';
+  searchParam?: CapabilityStatementSearchParam[];
+}
+
+export interface CapabilityStatementInteraction {
+  code:
+    | 'read'
+    | 'vread'
+    | 'update'
+    | 'patch'
+    | 'delete'
+    | 'history-instance'
+    | 'history-type'
+    | 'create'
+    | 'search-type';
+  documentation?: string;
+}
+
+export interface CapabilityStatementOperation {
+  name: string;
+  definition: string;
+  documentation?: string;
+}
+
+export interface CapabilityStatementSearchParam {
+  name: string;
+  definition?: string;
+  type:
+    | 'number'
+    | 'date'
+    | 'string'
+    | 'token'
+    | 'reference'
+    | 'composite'
+    | 'quantity'
+    | 'uri'
+    | 'special';
+  documentation?: string;
 }

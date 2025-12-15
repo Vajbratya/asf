@@ -31,6 +31,21 @@ enum ConnectorType {
   CUSTOM
 }
 
+enum HospitalVendor {
+  TASY
+  MV_SOUL
+  PIXEON
+  GENERIC_HL7
+  OTHER
+}
+
+enum PlanType {
+  STARTER
+  PROFESSIONAL
+  ENTERPRISE
+  CUSTOM
+}
+
 enum ConnectorStatus {
   ACTIVE
   INACTIVE
@@ -51,19 +66,61 @@ enum MessageStatus {
   RETRY
 }
 
+enum SubscriptionStatus {
+  ACTIVE
+  PAST_DUE
+  CANCELED
+  TRIALING
+  INCOMPLETE
+  INCOMPLETE_EXPIRED
+  UNPAID
+}
+
+enum BillingPeriod {
+  MONTHLY
+  ANNUAL
+}
+
 model Organization {
   id        String             @id @default(cuid())
   name      String
+  slug      String             @unique
   cnpj      String?            @unique
+  cnes      String?            // Brazilian hospital ID
   type      OrganizationType
+
+  // Billing info
+  planType         PlanType?
+  stripeCustomerId String?
+  billingEmail     String?
+
+  // Address
+  addressStreet  String?
+  addressCity    String?
+  addressState   String?
+  addressZipCode String?
+
+  // Technical contact
+  technicalContactName  String?
+  technicalContactEmail String?
+  technicalContactPhone String?
+
+  // Onboarding
+  onboardingCompletedAt DateTime?
+
   metadata  Json?
   createdAt DateTime           @default(now())
   updatedAt DateTime           @updatedAt
 
-  users      User[]
-  connectors Connector[]
+  users        User[]
+  connectors   Connector[]
+  apiKeys      ApiKey[]
+  webhooks     Webhook[]
+  subscription Subscription?
 
   @@index([cnpj])
+  @@index([slug])
+  @@index([stripeCustomerId])
 }
 
 model User {
@@ -87,12 +144,14 @@ model Connector {
   id             String          @id @default(cuid())
   name           String
   type           ConnectorType
+  vendor         HospitalVendor?
   status         ConnectorStatus @default(PENDING)
   organizationId String
   config         Json            // Connector-specific configuration
   credentials    Json?           // Encrypted credentials
   metadata       Json?
   lastSyncAt     DateTime?
+  lastHealthCheck DateTime?
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
 
@@ -142,6 +201,148 @@ model FhirResource {
   @@index([resourceType])
   @@index([resourceId])
   @@index([deleted])
+  @@index([createdAt])
+}
+
+model ApiKey {
+  id             String   @id @default(cuid())
+  organizationId String
+  name           String
+  key            String   @unique // Hashed API key
+  prefix         String   // First 8 chars for display
+  lastUsedAt     DateTime?
+  expiresAt      DateTime?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([key])
+}
+
+model Webhook {
+  id             String   @id @default(cuid())
+  organizationId String
+  url            String
+  events         Json     // Array of event types to listen to
+  secret         String   // For webhook signature verification
+  active         Boolean  @default(true)
+  lastTriggeredAt DateTime?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+}
+
+model Subscription {
+  id                       String             @id @default(cuid())
+  organizationId           String             @unique
+  organization             Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  // Stripe IDs
+  stripeSubscriptionId     String             @unique
+  stripeSubscriptionItemId String?            // For usage-based billing
+  stripePriceId            String
+
+  // Plan details
+  status                   SubscriptionStatus
+  planType                 PlanType
+  billingPeriod            BillingPeriod
+
+  // Limits
+  messageLimit             Int
+  connectorLimit           Int
+  userLimit                Int
+
+  // Current period
+  currentPeriodStart       DateTime
+  currentPeriodEnd         DateTime
+  cancelAtPeriodEnd        Boolean            @default(false)
+  canceledAt               DateTime?
+
+  // Trial
+  trialStart               DateTime?
+  trialEnd                 DateTime?
+
+  // Timestamps
+  createdAt                DateTime           @default(now())
+  updatedAt                DateTime           @updatedAt
+
+  usageRecords             UsageRecord[]
+  invoices                 Invoice[]
+
+  @@index([organizationId])
+  @@index([stripeSubscriptionId])
+  @@index([status])
+}
+
+model UsageRecord {
+  id             String       @id @default(cuid())
+  subscriptionId String
+  subscription   Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+
+  // Usage metrics
+  messages       Int          @default(0)
+  connectors     Int          @default(0)
+  users          Int          @default(0)
+
+  // Message type breakdown
+  messageTypeADT Int          @default(0)
+  messageTypeORM Int          @default(0)
+  messageTypeORU Int          @default(0)
+  messageTypeOther Int        @default(0)
+
+  // Period
+  periodStart    DateTime
+  periodEnd      DateTime
+
+  // Synced to Stripe
+  syncedToStripe Boolean      @default(false)
+  syncedAt       DateTime?
+
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([subscriptionId])
+  @@index([periodStart, periodEnd])
+  @@unique([subscriptionId, periodStart])
+}
+
+model Invoice {
+  id                   String       @id @default(cuid())
+  subscriptionId       String
+  subscription         Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+
+  // Stripe data
+  stripeInvoiceId      String       @unique
+  stripeInvoiceNumber  String?
+  stripeInvoiceUrl     String?
+  stripeInvoicePdf     String?
+
+  // Invoice details
+  amount               Int          // Amount in cents
+  currency             String       @default("BRL")
+  status               String       // paid, open, void, uncollectible
+
+  // Dates
+  periodStart          DateTime
+  periodEnd            DateTime
+  dueDate              DateTime?
+  paidAt               DateTime?
+
+  // Breakdown
+  subscriptionAmount   Int          // Base subscription cost
+  overageAmount        Int          @default(0) // Overage charges
+
+  createdAt            DateTime     @default(now())
+  updatedAt            DateTime     @updatedAt
+
+  @@index([subscriptionId])
+  @@index([stripeInvoiceId])
+  @@index([status])
   @@index([createdAt])
 }
 
