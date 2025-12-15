@@ -1,7 +1,7 @@
 FROM node:20-slim
 
-# Install pnpm
-RUN npm install -g pnpm turbo
+# Install pnpm 8 (matches lockfile v6.0) and turbo
+RUN npm install -g pnpm@8 turbo
 
 WORKDIR /app
 
@@ -11,19 +11,20 @@ COPY apps/api/package.json ./apps/api/
 COPY packages/shared/package.json ./packages/shared/
 COPY prisma ./prisma/
 
-# Install dependencies
-RUN pnpm install --frozen-lockfile
+# Install dependencies (ignore scripts for initial install)
+RUN pnpm install --frozen-lockfile --ignore-scripts
 
 # Copy source code
 COPY . .
 
 # Generate Prisma client
-RUN npx prisma generate --schema=./prisma/schema.prisma
+RUN pnpm add -g prisma && prisma generate --schema=./prisma/schema.prisma
 
-# Build
-RUN turbo build --filter=@integrasaude/api...
+# Build shared package first, then API
+RUN pnpm --filter @integrasaude/shared build && pnpm --filter @integrasaude/api build
 
 # Expose port
+ENV PORT=10000
 EXPOSE 10000
 
 # Start the API
