@@ -7,17 +7,17 @@
  * - ORU → DiagnosticReport + Observation Bundle
  */
 
-import { Patient, Visit, Order, DiagnosticReport, Observation } from "../types";
-import { ADTMessage } from "../messages/adt";
-import { ORMMessage } from "../messages/orm";
-import { ORUMessage } from "../messages/oru";
+import { Patient, Visit, Order, DiagnosticReport, Observation } from '../types';
+import { ADTMessage } from '../messages/adt';
+import { ORMMessage } from '../messages/orm';
+import { ORUMessage } from '../messages/oru';
 
 /**
  * FHIR R4 Bundle
  */
 export interface FHIRBundle {
-  resourceType: "Bundle";
-  type: "transaction" | "collection" | "document";
+  resourceType: 'Bundle';
+  type: 'transaction' | 'collection' | 'document';
   entry: FHIRBundleEntry[];
 }
 
@@ -25,7 +25,7 @@ export interface FHIRBundleEntry {
   fullUrl?: string;
   resource: any;
   request?: {
-    method: "GET" | "POST" | "PUT" | "DELETE";
+    method: 'GET' | 'POST' | 'PUT' | 'DELETE';
     url: string;
   };
 }
@@ -46,22 +46,19 @@ export class FHIRTransformer {
       fullUrl: `urn:uuid:patient-${adtMessage.patient.id}`,
       resource: patientResource,
       request: {
-        method: "PUT",
+        method: 'PUT',
         url: `Patient/${adtMessage.patient.id}`,
       },
     });
 
     // Create Encounter resource if visit info is present
     if (adtMessage.visit) {
-      const encounterResource = this.toFHIREncounter(
-        adtMessage.visit,
-        adtMessage.patient.id,
-      );
+      const encounterResource = this.toFHIREncounter(adtMessage.visit, adtMessage.patient.id);
       entries.push({
         fullUrl: `urn:uuid:encounter-${adtMessage.visit.id}`,
         resource: encounterResource,
         request: {
-          method: "PUT",
+          method: 'PUT',
           url: `Encounter/${adtMessage.visit.id}`,
         },
       });
@@ -69,23 +66,20 @@ export class FHIRTransformer {
 
     // Create Coverage resource if insurance info is present
     if (adtMessage.insurance) {
-      const coverageResource = this.toFHIRCoverage(
-        adtMessage.insurance,
-        adtMessage.patient.id,
-      );
+      const coverageResource = this.toFHIRCoverage(adtMessage.insurance, adtMessage.patient.id);
       entries.push({
         fullUrl: `urn:uuid:coverage-${adtMessage.patient.id}`,
         resource: coverageResource,
         request: {
-          method: "POST",
-          url: "Coverage",
+          method: 'POST',
+          url: 'Coverage',
         },
       });
     }
 
     return {
-      resourceType: "Bundle",
-      type: "transaction",
+      resourceType: 'Bundle',
+      type: 'transaction',
       entry: entries,
     };
   }
@@ -98,23 +92,20 @@ export class FHIRTransformer {
 
     // Create ServiceRequest for each order
     for (const order of ormMessage.orders) {
-      const serviceRequestResource = this.toFHIRServiceRequest(
-        order,
-        ormMessage.patient?.id,
-      );
+      const serviceRequestResource = this.toFHIRServiceRequest(order, ormMessage.patient?.id);
       entries.push({
         fullUrl: `urn:uuid:servicerequest-${order.id}`,
         resource: serviceRequestResource,
         request: {
-          method: "PUT",
+          method: 'PUT',
           url: `ServiceRequest/${order.id}`,
         },
       });
     }
 
     return {
-      resourceType: "Bundle",
-      type: "transaction",
+      resourceType: 'Bundle',
+      type: 'transaction',
       entry: entries,
     };
   }
@@ -128,10 +119,7 @@ export class FHIRTransformer {
     // Create Observation resources
     const observationIds: string[] = [];
     for (const observation of oruMessage.report.observations) {
-      const observationResource = this.toFHIRObservation(
-        observation,
-        oruMessage.patient?.id,
-      );
+      const observationResource = this.toFHIRObservation(observation, oruMessage.patient?.id);
       const obsId = `obs-${observation.id}`;
       observationIds.push(obsId);
 
@@ -139,8 +127,8 @@ export class FHIRTransformer {
         fullUrl: `urn:uuid:${obsId}`,
         resource: observationResource,
         request: {
-          method: "POST",
-          url: "Observation",
+          method: 'POST',
+          url: 'Observation',
         },
       });
     }
@@ -149,20 +137,20 @@ export class FHIRTransformer {
     const diagnosticReportResource = this.toFHIRDiagnosticReport(
       oruMessage.report,
       oruMessage.patient?.id,
-      observationIds,
+      observationIds
     );
     entries.push({
       fullUrl: `urn:uuid:diagnosticreport-${oruMessage.report.id}`,
       resource: diagnosticReportResource,
       request: {
-        method: "PUT",
+        method: 'PUT',
         url: `DiagnosticReport/${oruMessage.report.id}`,
       },
     });
 
     return {
-      resourceType: "Bundle",
-      type: "transaction",
+      resourceType: 'Bundle',
+      type: 'transaction',
       entry: entries,
     };
   }
@@ -172,7 +160,7 @@ export class FHIRTransformer {
    */
   private static toFHIRPatient(patient: Patient): any {
     const resource: any = {
-      resourceType: "Patient",
+      resourceType: 'Patient',
       id: patient.id,
       name: [
         {
@@ -204,7 +192,7 @@ export class FHIRTransformer {
 
     if (patient.phone && patient.phone.length > 0) {
       resource.telecom = patient.phone.map((phone) => ({
-        system: "phone",
+        system: 'phone',
         value: phone,
       }));
     }
@@ -215,14 +203,14 @@ export class FHIRTransformer {
 
       if (patient.cpf) {
         resource.identifier.push({
-          system: "http://rnds.saude.gov.br/fhir/r4/NamingSystem/cpf",
+          system: 'http://rnds.saude.gov.br/fhir/r4/NamingSystem/cpf',
           value: patient.cpf,
         });
       }
 
       if (patient.cns) {
         resource.identifier.push({
-          system: "http://rnds.saude.gov.br/fhir/r4/NamingSystem/cns",
+          system: 'http://rnds.saude.gov.br/fhir/r4/NamingSystem/cns',
           value: patient.cns,
         });
       }
@@ -236,11 +224,11 @@ export class FHIRTransformer {
    */
   private static toFHIREncounter(visit: Visit, patientId: string): any {
     const resource: any = {
-      resourceType: "Encounter",
+      resourceType: 'Encounter',
       id: visit.id,
-      status: visit.dischargeDateTime ? "finished" : "in-progress",
+      status: visit.dischargeDateTime ? 'finished' : 'in-progress',
       class: {
-        system: "http://terminology.hl7.org/CodeSystem/v3-ActCode",
+        system: 'http://terminology.hl7.org/CodeSystem/v3-ActCode',
         code: this.mapPatientClassToFHIR(visit.patientClass),
         display: this.getPatientClassDisplay(visit.patientClass),
       },
@@ -261,7 +249,7 @@ export class FHIRTransformer {
               visit.location.bed,
             ]
               .filter(Boolean)
-              .join(" / "),
+              .join(' / '),
           },
         },
       ];
@@ -274,10 +262,9 @@ export class FHIRTransformer {
             {
               coding: [
                 {
-                  system:
-                    "http://terminology.hl7.org/CodeSystem/v3-ParticipationType",
-                  code: "ATND",
-                  display: "attender",
+                  system: 'http://terminology.hl7.org/CodeSystem/v3-ParticipationType',
+                  code: 'ATND',
+                  display: 'attender',
                 },
               ],
             },
@@ -307,8 +294,8 @@ export class FHIRTransformer {
    */
   private static toFHIRCoverage(insurance: any, patientId: string): any {
     return {
-      resourceType: "Coverage",
-      status: "active",
+      resourceType: 'Coverage',
+      status: 'active',
       beneficiary: {
         reference: `Patient/${patientId}`,
       },
@@ -323,9 +310,8 @@ export class FHIRTransformer {
               type: {
                 coding: [
                   {
-                    system:
-                      "http://terminology.hl7.org/CodeSystem/coverage-class",
-                    code: "plan",
+                    system: 'http://terminology.hl7.org/CodeSystem/coverage-class',
+                    code: 'plan',
                   },
                 ],
               },
@@ -339,9 +325,9 @@ export class FHIRTransformer {
               type: {
                 coding: [
                   {
-                    system: "http://terminology.hl7.org/CodeSystem/v2-0203",
-                    code: "PPN",
-                    display: "Policy Number",
+                    system: 'http://terminology.hl7.org/CodeSystem/v2-0203',
+                    code: 'PPN',
+                    display: 'Policy Number',
                   },
                 ],
               },
@@ -353,9 +339,9 @@ export class FHIRTransformer {
               type: {
                 coding: [
                   {
-                    system: "http://terminology.hl7.org/CodeSystem/v2-0203",
-                    code: "GN",
-                    display: "Group Number",
+                    system: 'http://terminology.hl7.org/CodeSystem/v2-0203',
+                    code: 'GN',
+                    display: 'Group Number',
                   },
                 ],
               },
@@ -371,10 +357,10 @@ export class FHIRTransformer {
    */
   private static toFHIRServiceRequest(order: Order, patientId?: string): any {
     const resource: any = {
-      resourceType: "ServiceRequest",
+      resourceType: 'ServiceRequest',
       id: order.id,
       status: this.mapOrderControlToFHIRStatus(order.controlCode),
-      intent: "order",
+      intent: 'order',
     };
 
     if (patientId) {
@@ -387,7 +373,7 @@ export class FHIRTransformer {
       resource.code = {
         coding: [
           {
-            system: "http://www.ans.gov.br/tuss",
+            system: 'http://www.ans.gov.br/tuss',
             code: order.procedureCode,
             display: order.procedureText,
           },
@@ -408,7 +394,7 @@ export class FHIRTransformer {
     if (order.placerOrderNumber) {
       resource.identifier = [
         {
-          system: "http://hospital.example.org/placer",
+          system: 'http://hospital.example.org/placer',
           value: order.placerOrderNumber,
         },
       ];
@@ -417,7 +403,7 @@ export class FHIRTransformer {
     if (order.fillerOrderNumber) {
       if (!resource.identifier) resource.identifier = [];
       resource.identifier.push({
-        system: "http://hospital.example.org/filler",
+        system: 'http://hospital.example.org/filler',
         value: order.fillerOrderNumber,
       });
     }
@@ -431,12 +417,12 @@ export class FHIRTransformer {
   private static toFHIRDiagnosticReport(
     report: DiagnosticReport,
     patientId?: string,
-    observationIds: string[] = [],
+    observationIds: string[] = []
   ): any {
     const resource: any = {
-      resourceType: "DiagnosticReport",
+      resourceType: 'DiagnosticReport',
       id: report.id,
-      status: this.mapResultStatusToFHIR(report.resultStatus || "F"),
+      status: this.mapResultStatusToFHIR(report.resultStatus || 'F'),
     };
 
     if (patientId) {
@@ -471,13 +457,10 @@ export class FHIRTransformer {
   /**
    * Convert HL7 Observation to FHIR Observation resource
    */
-  private static toFHIRObservation(
-    observation: Observation,
-    patientId?: string,
-  ): any {
+  private static toFHIRObservation(observation: Observation, patientId?: string): any {
     const resource: any = {
-      resourceType: "Observation",
-      status: this.mapObservationStatusToFHIR(observation.status || "F"),
+      resourceType: 'Observation',
+      status: this.mapObservationStatusToFHIR(observation.status || 'F'),
       code: {
         text: observation.identifier,
       },
@@ -490,22 +473,24 @@ export class FHIRTransformer {
     }
 
     // Map value based on type
-    if (observation.type === "NM" && typeof observation.value === "number") {
+    if (observation.type === 'NM' && typeof observation.value === 'number') {
       resource.valueQuantity = {
         value: observation.value,
         unit: observation.units,
       };
     } else if (
-      observation.type === "ED" &&
-      typeof observation.value === "object"
+      observation.type === 'ED' &&
+      observation.value &&
+      typeof observation.value === 'object' &&
+      'type' in observation.value
     ) {
       // Encapsulated data (e.g., PDF)
+      const encapsulated = observation.value as { type: string; data: string };
       resource.valueAttachment = {
-        contentType:
-          observation.value.type === "PDF" ? "application/pdf" : undefined,
-        data: observation.value.data,
+        contentType: encapsulated.type === 'PDF' ? 'application/pdf' : undefined,
+        data: encapsulated.data,
       };
-    } else {
+    } else if (observation.value !== null) {
       resource.valueString = String(observation.value);
     }
 
@@ -521,8 +506,7 @@ export class FHIRTransformer {
       resource.interpretation = observation.abnormalFlags.map((flag) => ({
         coding: [
           {
-            system:
-              "http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation",
+            system: 'http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation',
             code: flag,
           },
         ],
@@ -541,12 +525,12 @@ export class FHIRTransformer {
    */
   private static mapGenderToFHIR(gender: string): string {
     const map: Record<string, string> = {
-      M: "male",
-      F: "female",
-      O: "other",
-      U: "unknown",
+      M: 'male',
+      F: 'female',
+      O: 'other',
+      U: 'unknown',
     };
-    return map[gender] || "unknown";
+    return map[gender] || 'unknown';
   }
 
   /**
@@ -554,14 +538,14 @@ export class FHIRTransformer {
    */
   private static mapPatientClassToFHIR(patientClass: string): string {
     const map: Record<string, string> = {
-      I: "IMP", // Inpatient
-      O: "AMB", // Outpatient/Ambulatory
-      E: "EMER", // Emergency
-      P: "PRENC", // Pre-admission
-      R: "AMB", // Recurring patient
-      B: "OBSENC", // Obstetrics
+      I: 'IMP', // Inpatient
+      O: 'AMB', // Outpatient/Ambulatory
+      E: 'EMER', // Emergency
+      P: 'PRENC', // Pre-admission
+      R: 'AMB', // Recurring patient
+      B: 'OBSENC', // Obstetrics
     };
-    return map[patientClass] || "AMB";
+    return map[patientClass] || 'AMB';
   }
 
   /**
@@ -569,14 +553,14 @@ export class FHIRTransformer {
    */
   private static getPatientClassDisplay(patientClass: string): string {
     const map: Record<string, string> = {
-      I: "inpatient encounter",
-      O: "ambulatory",
-      E: "emergency",
-      P: "prearranged encounter",
-      R: "ambulatory",
-      B: "obstetrics encounter",
+      I: 'inpatient encounter',
+      O: 'ambulatory',
+      E: 'emergency',
+      P: 'prearranged encounter',
+      R: 'ambulatory',
+      B: 'obstetrics encounter',
     };
-    return map[patientClass] || "ambulatory";
+    return map[patientClass] || 'ambulatory';
   }
 
   /**
@@ -584,16 +568,16 @@ export class FHIRTransformer {
    */
   private static mapOrderControlToFHIRStatus(controlCode: string): string {
     const map: Record<string, string> = {
-      NW: "active",
-      CA: "revoked",
-      DC: "revoked",
-      OK: "active",
-      HD: "on-hold",
-      RP: "replaced",
-      OC: "revoked",
-      CR: "revoked",
+      NW: 'active',
+      CA: 'revoked',
+      DC: 'revoked',
+      OK: 'active',
+      HD: 'on-hold',
+      RP: 'replaced',
+      OC: 'revoked',
+      CR: 'revoked',
     };
-    return map[controlCode] || "active";
+    return map[controlCode] || 'active';
   }
 
   /**
@@ -601,14 +585,14 @@ export class FHIRTransformer {
    */
   private static mapResultStatusToFHIR(status: string): string {
     const map: Record<string, string> = {
-      P: "preliminary",
-      F: "final",
-      C: "amended",
-      X: "cancelled",
-      I: "registered",
-      S: "partial",
+      P: 'preliminary',
+      F: 'final',
+      C: 'amended',
+      X: 'cancelled',
+      I: 'registered',
+      S: 'partial',
     };
-    return map[status] || "final";
+    return map[status] || 'final';
   }
 
   /**
@@ -616,13 +600,13 @@ export class FHIRTransformer {
    */
   private static mapObservationStatusToFHIR(status: string): string {
     const map: Record<string, string> = {
-      P: "preliminary",
-      F: "final",
-      C: "amended",
-      X: "cancelled",
-      I: "registered",
-      S: "preliminary",
+      P: 'preliminary',
+      F: 'final',
+      C: 'amended',
+      X: 'cancelled',
+      I: 'registered',
+      S: 'preliminary',
     };
-    return map[status] || "final";
+    return map[status] || 'final';
   }
 }

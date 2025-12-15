@@ -6,7 +6,14 @@
  * Handles embedded PDFs (Base64 in OBX-5)
  */
 
-import { HL7Message, HL7Segment, Observation, DiagnosticReport } from '../types';
+import {
+  HL7Message,
+  HL7Segment,
+  Observation,
+  DiagnosticReport,
+  ObservationValue,
+  EncapsulatedData,
+} from '../types';
 import { HL7Parser } from '../parser';
 
 export interface ORUMessage {
@@ -143,29 +150,31 @@ export class ORUParser {
       const identifierText = identifierComponents[1] || '';
 
       // OBX-5: Observation Value
-      let value = HL7Parser.getField(obxSegment, 5);
+      const rawValue = HL7Parser.getField(obxSegment, 5);
+      let value: ObservationValue | null = rawValue;
 
       // Handle different value types
-      if (valueType === 'NM' && value) {
+      if (valueType === 'NM' && rawValue) {
         // Numeric value
-        const numValue = parseFloat(value);
-        value = isNaN(numValue) ? value : numValue;
-      } else if (valueType === 'ED' && value) {
+        const numValue = parseFloat(rawValue);
+        value = isNaN(numValue) ? rawValue : numValue;
+      } else if (valueType === 'ED' && rawValue) {
         // Encapsulated Data (e.g., PDF)
         // Format: DataType^DataSubtype^Encoding^Data
-        const edComponents = value.split(delimiters.component);
+        const edComponents = rawValue.split(delimiters.component);
         if (edComponents.length >= 4) {
           const dataType = edComponents[0];
           const encoding = edComponents[2];
           const data = edComponents[3];
 
-          value = {
+          const encapsulatedData: EncapsulatedData = {
             type: dataType,
             encoding: encoding,
             data: data,
             isPDF: dataType === 'PDF' || dataType === 'Application/PDF',
             isBase64: encoding === 'Base64' || encoding === 'base64',
           };
+          value = encapsulatedData;
         }
       }
 
@@ -227,8 +236,11 @@ export class ORUParser {
    */
   static extractPDF(report: DiagnosticReport): string | null {
     for (const obs of report.observations) {
-      if (typeof obs.value === 'object' && obs.value.isPDF && obs.value.isBase64) {
-        return obs.value.data;
+      if (obs.value && typeof obs.value === 'object' && 'isPDF' in obs.value) {
+        const encapsulated = obs.value as EncapsulatedData;
+        if (encapsulated.isPDF && encapsulated.isBase64) {
+          return encapsulated.data;
+        }
       }
     }
     return null;
