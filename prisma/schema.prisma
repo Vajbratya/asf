@@ -129,16 +129,19 @@ model FhirResource {
   connectorId  String
   resourceType String   // FHIR resource type (Patient, Observation, etc.)
   resourceId   String   // FHIR resource ID
-  data         Json     // Full FHIR resource as JSONB
-  version      Int      @default(1)
+  versionId    Int      @default(1) // FHIR version ID for optimistic locking
+  content      Json     // Full FHIR resource as JSONB
+  deleted      Boolean  @default(false) // Soft delete flag
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
   connector Connector @relation(fields: [connectorId], references: [id], onDelete: Cascade)
 
-  @@unique([resourceType, resourceId])
+  @@unique([resourceType, resourceId, versionId]) // Ensure unique versions
   @@index([connectorId])
   @@index([resourceType])
+  @@index([resourceId])
+  @@index([deleted])
   @@index([createdAt])
 }
 
