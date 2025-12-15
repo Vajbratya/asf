@@ -9,17 +9,17 @@ export default function ChangelogPage() {
   const releases = [
     {
       version: '1.2.0',
-      date: '15 Dez 2024',
+      date: '15 Dez 2025',
       changes: ['Novo design system', 'Paginas de documentacao', 'Melhorias de performance'],
     },
     {
       version: '1.1.0',
-      date: '1 Dez 2024',
+      date: '1 Dez 2025',
       changes: ['Suporte a Pixeon', 'Dashboard em tempo real', 'Webhooks customizados'],
     },
     {
       version: '1.0.0',
-      date: '15 Nov 2024',
+      date: '15 Nov 2025',
       changes: ['Lancamento inicial', 'Suporte a Tasy e MV Soul', 'Parser HL7 v2'],
     },
   ];

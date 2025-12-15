@@ -41,7 +41,7 @@ export const workos = {
 
 export const WORKOS_CLIENT_ID = process.env.WORKOS_CLIENT_ID || '';
 export const WORKOS_REDIRECT_URI =
-  process.env.WORKOS_REDIRECT_URI || 'http://localhost:3000/auth/callback';
+  process.env.WORKOS_REDIRECT_URI || 'https://integrabrasil.vercel.app/api/auth/callback';
 
 export async function getAuthorizationUrl(params?: {
   state?: string;
