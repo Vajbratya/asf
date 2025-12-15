@@ -1,7 +1,20 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "installCommand": "pnpm install",
-  "buildCommand": "pnpm turbo build --filter=@integrasaude/web...",
-  "outputDirectory": "apps/web/.next",
-  "framework": "nextjs"
+  "version": 2,
+  "builds": [
+    {
+      "src": "apps/web/package.json",
+      "use": "@vercel/next",
+      "config": {
+        "installCommand": "cd ../.. && pnpm install",
+        "buildCommand": "cd ../.. && pnpm turbo build --filter=@integrasaude/web..."
+      }
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "/apps/web/$1"
+    }
+  ]
 }
