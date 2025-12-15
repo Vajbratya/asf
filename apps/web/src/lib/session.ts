@@ -3,21 +3,25 @@ import { jwtVerify, SignJWT } from 'jose';
 
 const SESSION_COOKIE_NAME = 'integrasaude-session';
 
-// Validate SESSION_SECRET at startup
-if (!process.env.WORKOS_COOKIE_PASSWORD) {
-  throw new Error(
-    'WORKOS_COOKIE_PASSWORD environment variable is required and must be at least 32 characters long'
-  );
-}
+// Lazy validation of SESSION_SECRET - only validate when actually used
+function getSessionSecret(): Uint8Array {
+  const password = process.env.WORKOS_COOKIE_PASSWORD;
 
-if (process.env.WORKOS_COOKIE_PASSWORD.length < 32) {
-  throw new Error(
-    'WORKOS_COOKIE_PASSWORD must be at least 32 characters long for security. Current length: ' +
-      process.env.WORKOS_COOKIE_PASSWORD.length
-  );
-}
+  if (!password) {
+    throw new Error(
+      'WORKOS_COOKIE_PASSWORD environment variable is required and must be at least 32 characters long'
+    );
+  }
 
-const SESSION_SECRET = new TextEncoder().encode(process.env.WORKOS_COOKIE_PASSWORD);
+  if (password.length < 32) {
+    throw new Error(
+      'WORKOS_COOKIE_PASSWORD must be at least 32 characters long for security. Current length: ' +
+        password.length
+    );
+  }
+
+  return new TextEncoder().encode(password);
+}
 
 export interface SessionData {
   userId: string;
@@ -34,7 +38,7 @@ export async function createSession(data: SessionData): Promise<string> {
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
     .setExpirationTime('7d')
-    .sign(SESSION_SECRET);
+    .sign(getSessionSecret());
 
   const cookieStore = await cookies();
   cookieStore.set(SESSION_COOKIE_NAME, token, {
@@ -57,7 +61,7 @@ export async function getSession(): Promise<SessionData | null> {
       return null;
     }
 
-    const { payload } = await jwtVerify(token, SESSION_SECRET);
+    const { payload } = await jwtVerify(token, getSessionSecret());
     return payload.data as SessionData;
   } catch (error) {
     console.error('Session verification error:', error);
