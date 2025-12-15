@@ -1,16 +1,45 @@
 import { WorkOS } from '@workos-inc/node';
 
-if (!process.env.WORKOS_API_KEY) {
-  throw new Error('WORKOS_API_KEY is required');
+// Lazy initialization to allow build without env vars
+let workosInstance: WorkOS | null = null;
+
+function getWorkOS(): WorkOS {
+  if (!workosInstance) {
+    if (!process.env.WORKOS_API_KEY) {
+      throw new Error('WORKOS_API_KEY is required');
+    }
+    workosInstance = new WorkOS(process.env.WORKOS_API_KEY);
+  }
+  return workosInstance;
 }
 
-if (!process.env.WORKOS_CLIENT_ID) {
-  throw new Error('WORKOS_CLIENT_ID is required');
+function getClientId(): string {
+  if (!process.env.WORKOS_CLIENT_ID) {
+    throw new Error('WORKOS_CLIENT_ID is required');
+  }
+  return process.env.WORKOS_CLIENT_ID;
 }
 
-export const workos = new WorkOS(process.env.WORKOS_API_KEY);
+export const workos = {
+  get instance() {
+    return getWorkOS();
+  },
+  userManagement: {
+    getAuthorizationUrl: (...args: Parameters<WorkOS['userManagement']['getAuthorizationUrl']>) =>
+      getWorkOS().userManagement.getAuthorizationUrl(...args),
+    authenticateWithCode: (...args: Parameters<WorkOS['userManagement']['authenticateWithCode']>) =>
+      getWorkOS().userManagement.authenticateWithCode(...args),
+    getUser: (...args: Parameters<WorkOS['userManagement']['getUser']>) =>
+      getWorkOS().userManagement.getUser(...args),
+    authenticateWithRefreshToken: (
+      ...args: Parameters<WorkOS['userManagement']['authenticateWithRefreshToken']>
+    ) => getWorkOS().userManagement.authenticateWithRefreshToken(...args),
+    revokeSession: (...args: Parameters<WorkOS['userManagement']['revokeSession']>) =>
+      getWorkOS().userManagement.revokeSession(...args),
+  },
+};
 
-export const WORKOS_CLIENT_ID = process.env.WORKOS_CLIENT_ID;
+export const WORKOS_CLIENT_ID = process.env.WORKOS_CLIENT_ID || '';
 export const WORKOS_REDIRECT_URI =
   process.env.WORKOS_REDIRECT_URI || 'http://localhost:3000/auth/callback';
 
@@ -21,7 +50,7 @@ export async function getAuthorizationUrl(params?: {
   organization?: string;
 }) {
   const authorizationUrl = workos.userManagement.getAuthorizationUrl({
-    clientId: WORKOS_CLIENT_ID,
+    clientId: getClientId(),
     redirectUri: WORKOS_REDIRECT_URI,
     state: params?.state,
     provider: params?.provider,
@@ -35,7 +64,7 @@ export async function getAuthorizationUrl(params?: {
 export async function authenticateWithCode(code: string) {
   try {
     const { user, accessToken, refreshToken } = await workos.userManagement.authenticateWithCode({
-      clientId: WORKOS_CLIENT_ID,
+      clientId: getClientId(),
       code,
     });
 
@@ -64,7 +93,7 @@ export async function refreshAccessToken(refreshToken: string) {
   try {
     const { accessToken: newAccessToken, refreshToken: newRefreshToken } =
       await workos.userManagement.authenticateWithRefreshToken({
-        clientId: WORKOS_CLIENT_ID,
+        clientId: getClientId(),
         refreshToken,
       });
 
