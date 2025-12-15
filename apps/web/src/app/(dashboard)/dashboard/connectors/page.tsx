@@ -1,23 +1,28 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Plus, Trash2, Play } from "lucide-react";
+import { useEffect, useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Plus, Trash2, Play } from 'lucide-react';
+import { apiGet, apiPost, apiDelete } from '@/lib/api';
+import { LoadingCard } from '@/components/ui/loading';
+import { ErrorAlert } from '@/components/ui/error-alert';
+import { notify } from '@/lib/toast';
 
 export default function ConnectorsPage() {
   const [connectors, setConnectors] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({
-    name: "",
-    type: "HL7",
-    host: "",
-    port: "",
-    endpoint: "",
+    name: '',
+    type: 'HL7',
+    host: '',
+    port: '',
+    endpoint: '',
   });
 
   useEffect(() => {
@@ -26,11 +31,14 @@ export default function ConnectorsPage() {
 
   const fetchConnectors = async () => {
     try {
-      const res = await fetch("http://localhost:3001/api/connectors");
-      const data = await res.json();
+      setError(null);
+      const data = await apiGet<{ connectors: any[] }>('/api/connectors');
       setConnectors(data.connectors);
     } catch (error) {
-      console.error("Failed to fetch connectors:", error);
+      console.error('Failed to fetch connectors:', error);
+      const message = error instanceof Error ? error.message : 'Failed to load connectors';
+      setError(message);
+      notify.error(message);
     } finally {
       setLoading(false);
     }
@@ -39,78 +47,75 @@ export default function ConnectorsPage() {
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const res = await fetch("http://localhost:3001/api/connectors", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...formData,
-          port: formData.port ? parseInt(formData.port) : undefined,
-        }),
+      await apiPost('/api/connectors', {
+        ...formData,
+        port: formData.port ? parseInt(formData.port) : undefined,
       });
 
-      if (res.ok) {
-        setShowForm(false);
-        setFormData({
-          name: "",
-          type: "HL7",
-          host: "",
-          port: "",
-          endpoint: "",
-        });
-        fetchConnectors();
-      }
+      notify.success('Connector created successfully');
+      setShowForm(false);
+      setFormData({
+        name: '',
+        type: 'HL7',
+        host: '',
+        port: '',
+        endpoint: '',
+      });
+      fetchConnectors();
     } catch (error) {
-      console.error("Failed to create connector:", error);
+      console.error('Failed to create connector:', error);
+      const message = error instanceof Error ? error.message : 'Failed to create connector';
+      setError(message);
+      notify.error(message);
     }
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this connector?")) return;
+    if (!confirm('Are you sure you want to delete this connector?')) return;
 
     try {
-      await fetch(`http://localhost:3001/api/connectors/${id}`, {
-        method: "DELETE",
-      });
+      await apiDelete(`/api/connectors/${id}`);
+      notify.success('Connector deleted successfully');
       fetchConnectors();
     } catch (error) {
-      console.error("Failed to delete connector:", error);
+      console.error('Failed to delete connector:', error);
+      const message = error instanceof Error ? error.message : 'Failed to delete connector';
+      setError(message);
+      notify.error(message);
     }
   };
 
   const handleTest = async (id: string) => {
     try {
-      const res = await fetch(
-        `http://localhost:3001/api/connectors/${id}/test`,
-        {
-          method: "POST",
-        },
-      );
-      const data = await res.json();
-      alert(data.message);
+      const data = await apiPost<{ message: string }>(`/api/connectors/${id}/test`);
+      notify.success(data.message);
       fetchConnectors();
     } catch (error) {
-      console.error("Failed to test connector:", error);
+      console.error('Failed to test connector:', error);
+      const message = error instanceof Error ? error.message : 'Failed to test connector';
+      setError(message);
+      notify.error(message);
     }
   };
 
   if (loading) {
-    return <div className="text-muted-foreground">Loading connectors...</div>;
+    return <LoadingCard message="Loading connectors..." />;
   }
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold">Connectors</h1>
-          <p className="text-muted-foreground">
-            Manage your healthcare system connections
-          </p>
+          <p className="text-muted-foreground">Manage your healthcare system connections</p>
         </div>
-        <Button onClick={() => setShowForm(!showForm)}>
+        <Button onClick={() => setShowForm(!showForm)} aria-label="Add new connector">
           <Plus className="mr-2 h-4 w-4" />
           Add Connector
         </Button>
       </div>
+
+      {error && <ErrorAlert message={error} onRetry={fetchConnectors} />}
 
       {showForm && (
         <Card>
@@ -125,9 +130,7 @@ export default function ConnectorsPage() {
                   <Input
                     id="name"
                     value={formData.name}
-                    onChange={(e) =>
-                      setFormData({ ...formData, name: e.target.value })
-                    }
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     required
                   />
                 </div>
@@ -136,9 +139,7 @@ export default function ConnectorsPage() {
                   <select
                     id="type"
                     value={formData.type}
-                    onChange={(e) =>
-                      setFormData({ ...formData, type: e.target.value })
-                    }
+                    onChange={(e) => setFormData({ ...formData, type: e.target.value })}
                     className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                   >
                     <option value="HL7">HL7</option>
@@ -151,9 +152,7 @@ export default function ConnectorsPage() {
                   <Input
                     id="host"
                     value={formData.host}
-                    onChange={(e) =>
-                      setFormData({ ...formData, host: e.target.value })
-                    }
+                    onChange={(e) => setFormData({ ...formData, host: e.target.value })}
                     required
                   />
                 </div>
@@ -163,9 +162,7 @@ export default function ConnectorsPage() {
                     id="port"
                     type="number"
                     value={formData.port}
-                    onChange={(e) =>
-                      setFormData({ ...formData, port: e.target.value })
-                    }
+                    onChange={(e) => setFormData({ ...formData, port: e.target.value })}
                   />
                 </div>
                 <div className="space-y-2 md:col-span-2">
@@ -173,19 +170,13 @@ export default function ConnectorsPage() {
                   <Input
                     id="endpoint"
                     value={formData.endpoint}
-                    onChange={(e) =>
-                      setFormData({ ...formData, endpoint: e.target.value })
-                    }
+                    onChange={(e) => setFormData({ ...formData, endpoint: e.target.value })}
                   />
                 </div>
               </div>
               <div className="flex gap-2">
                 <Button type="submit">Create</Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setShowForm(false)}
-                >
+                <Button type="button" variant="outline" onClick={() => setShowForm(false)}>
                   Cancel
                 </Button>
               </div>
@@ -201,15 +192,9 @@ export default function ConnectorsPage() {
               <div className="flex items-start justify-between">
                 <div>
                   <CardTitle>{connector.name}</CardTitle>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    {connector.type}
-                  </p>
+                  <p className="text-sm text-muted-foreground mt-1">{connector.type}</p>
                 </div>
-                <Badge
-                  variant={
-                    connector.status === "active" ? "success" : "destructive"
-                  }
-                >
+                <Badge variant={connector.status === 'active' ? 'success' : 'destructive'}>
                   {connector.status}
                 </Badge>
               </div>
@@ -217,18 +202,16 @@ export default function ConnectorsPage() {
             <CardContent>
               <div className="space-y-2 text-sm">
                 <div>
-                  <span className="text-muted-foreground">Host:</span>{" "}
-                  {connector.host}
+                  <span className="text-muted-foreground">Host:</span> {connector.host}
                 </div>
                 {connector.port && (
                   <div>
-                    <span className="text-muted-foreground">Port:</span>{" "}
-                    {connector.port}
+                    <span className="text-muted-foreground">Port:</span> {connector.port}
                   </div>
                 )}
                 {connector.lastHealthAt && (
                   <div>
-                    <span className="text-muted-foreground">Last check:</span>{" "}
+                    <span className="text-muted-foreground">Last check:</span>{' '}
                     {new Date(connector.lastHealthAt).toLocaleString()}
                   </div>
                 )}
@@ -238,6 +221,7 @@ export default function ConnectorsPage() {
                   size="sm"
                   variant="outline"
                   onClick={() => handleTest(connector.id)}
+                  aria-label={`Test connector ${connector.name}`}
                 >
                   <Play className="mr-2 h-3 w-3" />
                   Test
@@ -246,6 +230,7 @@ export default function ConnectorsPage() {
                   size="sm"
                   variant="destructive"
                   onClick={() => handleDelete(connector.id)}
+                  aria-label={`Delete connector ${connector.name}`}
                 >
                   <Trash2 className="mr-2 h-3 w-3" />
                   Delete

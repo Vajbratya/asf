@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { useEffect, useState } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
   Table,
   TableBody,
@@ -12,18 +12,23 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
-import { ChevronLeft, ChevronRight, Search } from "lucide-react";
+} from '@/components/ui/table';
+import { ChevronLeft, ChevronRight, Search } from 'lucide-react';
+import { apiGet } from '@/lib/api';
+import { LoadingCard, LoadingTable } from '@/components/ui/loading';
+import { ErrorAlert } from '@/components/ui/error-alert';
+import { notify } from '@/lib/toast';
 
 export default function MessagesPage() {
   const [messages, setMessages] = useState<any[]>([]);
   const [pagination, setPagination] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [filters, setFilters] = useState({
-    status: "",
-    type: "",
-    search: "",
+    status: '',
+    type: '',
+    search: '',
   });
 
   useEffect(() => {
@@ -33,19 +38,22 @@ export default function MessagesPage() {
   const fetchMessages = async () => {
     setLoading(true);
     try {
+      setError(null);
       const params = new URLSearchParams({
         page: page.toString(),
-        limit: "20",
+        limit: '20',
         ...(filters.status && { status: filters.status }),
         ...(filters.type && { type: filters.type }),
       });
 
-      const res = await fetch(`http://localhost:3001/api/messages?${params}`);
-      const data = await res.json();
+      const data = await apiGet<{ messages: any[]; pagination: any }>(`/api/messages?${params}`);
       setMessages(data.messages);
       setPagination(data.pagination);
     } catch (error) {
-      console.error("Failed to fetch messages:", error);
+      console.error('Failed to fetch messages:', error);
+      const message = error instanceof Error ? error.message : 'Failed to load messages';
+      setError(message);
+      notify.error(message);
     } finally {
       setLoading(false);
     }
@@ -53,13 +61,13 @@ export default function MessagesPage() {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case "processed":
+      case 'processed':
         return <Badge variant="success">Processed</Badge>;
-      case "failed":
+      case 'failed':
         return <Badge variant="destructive">Failed</Badge>;
-      case "processing":
+      case 'processing':
         return <Badge variant="warning">Processing</Badge>;
-      case "received":
+      case 'received':
         return <Badge variant="outline">Received</Badge>;
       default:
         return <Badge variant="outline">{status}</Badge>;
@@ -75,10 +83,10 @@ export default function MessagesPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold">Messages</h1>
-        <p className="text-muted-foreground">
-          View and filter all processed messages
-        </p>
+        <p className="text-muted-foreground">View and filter all processed messages</p>
       </div>
+
+      {error && <ErrorAlert message={error} onRetry={fetchMessages} />}
 
       {/* Filters */}
       <Card>
@@ -88,18 +96,16 @@ export default function MessagesPage() {
               <Input
                 placeholder="Search messages..."
                 value={filters.search}
-                onChange={(e) =>
-                  setFilters({ ...filters, search: e.target.value })
-                }
+                onChange={(e) => setFilters({ ...filters, search: e.target.value })}
+                aria-label="Search messages"
               />
             </div>
             <div>
               <select
                 value={filters.status}
-                onChange={(e) =>
-                  setFilters({ ...filters, status: e.target.value })
-                }
+                onChange={(e) => setFilters({ ...filters, status: e.target.value })}
                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                aria-label="Filter by status"
               >
                 <option value="">All Statuses</option>
                 <option value="received">Received</option>
@@ -111,10 +117,9 @@ export default function MessagesPage() {
             <div>
               <select
                 value={filters.type}
-                onChange={(e) =>
-                  setFilters({ ...filters, type: e.target.value })
-                }
+                onChange={(e) => setFilters({ ...filters, type: e.target.value })}
                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                aria-label="Filter by message type"
               >
                 <option value="">All Types</option>
                 <option value="ADT">ADT</option>
@@ -123,7 +128,11 @@ export default function MessagesPage() {
               </select>
             </div>
             <div>
-              <Button onClick={handleApplyFilters} className="w-full">
+              <Button
+                onClick={handleApplyFilters}
+                className="w-full"
+                aria-label="Apply message filters"
+              >
                 <Search className="mr-2 h-4 w-4" />
                 Apply Filters
               </Button>
@@ -136,9 +145,7 @@ export default function MessagesPage() {
       <Card>
         <CardContent className="pt-6">
           {loading ? (
-            <div className="text-center py-8 text-muted-foreground">
-              Loading messages...
-            </div>
+            <LoadingTable />
           ) : (
             <>
               <Table>
@@ -150,43 +157,29 @@ export default function MessagesPage() {
                     <TableHead>Status</TableHead>
                     <TableHead>Connector</TableHead>
                     <TableHead>Created</TableHead>
-                    <TableHead className="text-right">
-                      Processing Time
-                    </TableHead>
+                    <TableHead className="text-right">Processing Time</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {messages.length === 0 ? (
                     <TableRow>
-                      <TableCell
-                        colSpan={7}
-                        className="text-center text-muted-foreground"
-                      >
+                      <TableCell colSpan={7} className="text-center text-muted-foreground">
                         No messages found
                       </TableCell>
                     </TableRow>
                   ) : (
                     messages.map((message) => (
-                      <TableRow
-                        key={message.id}
-                        className="cursor-pointer hover:bg-muted/50"
-                      >
+                      <TableRow key={message.id} className="cursor-pointer hover:bg-muted/50">
                         <TableCell className="font-mono text-xs">
                           {message.id.substring(0, 8)}...
                         </TableCell>
-                        <TableCell className="font-medium">
-                          {message.messageType}
-                        </TableCell>
+                        <TableCell className="font-medium">{message.messageType}</TableCell>
                         <TableCell>{message.protocol}</TableCell>
                         <TableCell>{getStatusBadge(message.status)}</TableCell>
-                        <TableCell>{message.connector?.name || "-"}</TableCell>
-                        <TableCell>
-                          {new Date(message.createdAt).toLocaleString()}
-                        </TableCell>
+                        <TableCell>{message.connector?.name || '-'}</TableCell>
+                        <TableCell>{new Date(message.createdAt).toLocaleString()}</TableCell>
                         <TableCell className="text-right">
-                          {message.processingTime
-                            ? `${message.processingTime}ms`
-                            : "-"}
+                          {message.processingTime ? `${message.processingTime}ms` : '-'}
                         </TableCell>
                       </TableRow>
                     ))
@@ -198,8 +191,7 @@ export default function MessagesPage() {
               {pagination && pagination.pages > 1 && (
                 <div className="flex items-center justify-between mt-4">
                   <div className="text-sm text-muted-foreground">
-                    Page {pagination.page} of {pagination.pages} (
-                    {pagination.total} total)
+                    Page {pagination.page} of {pagination.pages} ({pagination.total} total)
                   </div>
                   <div className="flex gap-2">
                     <Button
