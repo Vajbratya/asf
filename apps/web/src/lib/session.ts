@@ -2,9 +2,22 @@ import { cookies } from 'next/headers';
 import { jwtVerify, SignJWT } from 'jose';
 
 const SESSION_COOKIE_NAME = 'integrasaude-session';
-const SESSION_SECRET = new TextEncoder().encode(
-  process.env.WORKOS_COOKIE_PASSWORD || 'dev-secret-key-change-in-production-minimum-32-chars'
-);
+
+// Validate SESSION_SECRET at startup
+if (!process.env.WORKOS_COOKIE_PASSWORD) {
+  throw new Error(
+    'WORKOS_COOKIE_PASSWORD environment variable is required and must be at least 32 characters long'
+  );
+}
+
+if (process.env.WORKOS_COOKIE_PASSWORD.length < 32) {
+  throw new Error(
+    'WORKOS_COOKIE_PASSWORD must be at least 32 characters long for security. Current length: ' +
+      process.env.WORKOS_COOKIE_PASSWORD.length
+  );
+}
+
+const SESSION_SECRET = new TextEncoder().encode(process.env.WORKOS_COOKIE_PASSWORD);
 
 export interface SessionData {
   userId: string;

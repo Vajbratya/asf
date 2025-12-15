@@ -32,10 +32,14 @@ export const cache = {
    */
   async set<T>(key: string, value: T, ttl?: number): Promise<boolean> {
     try {
+      // Upstash Redis client handles JSON serialization automatically
+      // Only stringify if the value is not already a string to avoid double encoding
+      const serializedValue = typeof value === 'string' ? value : value;
+
       if (ttl) {
-        await redis.setex(key, ttl, JSON.stringify(value));
+        await redis.setex(key, ttl, serializedValue);
       } else {
-        await redis.set(key, JSON.stringify(value));
+        await redis.set(key, serializedValue);
       }
       return true;
     } catch (error) {
@@ -177,7 +181,8 @@ export const session = {
    */
   async create(userId: string, data: Record<string, unknown>, ttl = 86400): Promise<string> {
     const sessionId = `session:${crypto.randomUUID()}`;
-    await redis.setex(sessionId, ttl, JSON.stringify({ userId, ...data }));
+    // Upstash Redis client handles JSON serialization automatically
+    await redis.setex(sessionId, ttl, { userId, ...data });
     return sessionId;
   },
 
@@ -185,8 +190,9 @@ export const session = {
    * Get session data
    */
   async get(sessionId: string): Promise<Record<string, unknown> | null> {
-    const data = await redis.get<string>(sessionId);
-    return data ? JSON.parse(data) : null;
+    // Upstash Redis client handles JSON deserialization automatically
+    const data = await redis.get<Record<string, unknown>>(sessionId);
+    return data;
   },
 
   /**
@@ -197,7 +203,8 @@ export const session = {
     if (!existing) return false;
 
     const ttl = await redis.ttl(sessionId);
-    await redis.setex(sessionId, ttl > 0 ? ttl : 86400, JSON.stringify({ ...existing, ...data }));
+    // Upstash Redis client handles JSON serialization automatically
+    await redis.setex(sessionId, ttl > 0 ? ttl : 86400, { ...existing, ...data });
     return true;
   },
 

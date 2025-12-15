@@ -6,6 +6,7 @@ import { prettyJSON } from 'hono/pretty-json';
 import healthRouter from './routes/health';
 import v1Router from './routes/v1';
 import { errorHandler } from './middleware/error-handler';
+import { env, getAllowedOrigins } from './lib/env';
 
 const app = new Hono();
 
@@ -15,7 +16,7 @@ app.use('*', prettyJSON());
 app.use(
   '*',
   cors({
-    origin: ['http://localhost:3000', 'http://localhost:3001'],
+    origin: getAllowedOrigins(),
     credentials: true,
   })
 );
@@ -32,13 +33,11 @@ app.notFound((c) => {
   return c.json({ error: 'Not Found', path: c.req.path }, 404);
 });
 
-const port = process.env.PORT ? parseInt(process.env.PORT) : 3001;
-
-console.log(`Server is running on port ${port}`);
+console.log(`Server is running on port ${env.PORT}`);
 
 serve({
   fetch: app.fetch,
-  port,
+  port: env.PORT,
 });
 
 export default app;
