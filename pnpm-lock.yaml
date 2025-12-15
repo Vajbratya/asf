@@ -23,6 +23,9 @@ importers:
       '@hono/node-server':
         specifier: ^1.4.1
         version: 1.19.7(hono@3.12.12)
+      '@hono/zod-validator':
+        specifier: ^0.2.1
+        version: 0.2.2(hono@3.12.12)(zod@3.25.76)
       '@integrasaude/shared':
         specifier: workspace:*
         version: link:../../packages/shared
@@ -1147,6 +1150,16 @@ packages:
       hono: ^4
     dependencies:
       hono: 3.12.12
+    dev: false
+
+  /@hono/zod-validator@0.2.2(hono@3.12.12)(zod@3.25.76):
+    resolution: {integrity: sha512-dSDxaPV70Py8wuIU2QNpoVEIOSzSXZ/6/B/h4xA7eOMz7+AarKTSGV8E6QwrdcCbBLkpqfJ4Q2TmBO0eP1tCBQ==}
+    peerDependencies:
+      hono: '>=3.9.0'
+      zod: ^3.19.1
+    dependencies:
+      hono: 3.12.12
+      zod: 3.25.76
     dev: false
 
   /@humanwhocodes/config-array@0.13.0:
