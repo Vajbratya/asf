@@ -142,14 +142,16 @@ export class ADTParser {
 
     // Check PID-3 for alternate identifiers
     // Format: ID^^^Type where Type can be CPF or CNS
-    const pid3Field = HL7Parser.getField(pidSegment, 3) || '';
-    const repetitions = pid3Field.split(delimiters.repetition);
+    // PID-3 is at field index 3 (1-based), so array index is 2
+    const pid3Repetitions = pidSegment.fields[2] || [];
 
-    for (const rep of repetitions) {
+    for (const rep of pid3Repetitions) {
       const components = rep.split(delimiters.component);
       if (components.length >= 4) {
         const idValue = components[0];
-        const idType = components[3];
+        // PID-3 format can be: ID^^^Type (4 components) or ID^checkdigit^checkdigitscheme^assigningAuth^idTypeCode (5 components)
+        // Check components[3] first (simpler format), then components[4] (full format)
+        const idType = components.length >= 5 ? components[4] : components[3];
 
         if (idType === 'CPF' && idValue) {
           cpf = idValue;

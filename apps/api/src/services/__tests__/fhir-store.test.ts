@@ -372,9 +372,7 @@ describe('FHIRStore', () => {
       (mockPrisma.fhirResource.create as any).mockResolvedValue(createdResource);
       (mockPrisma.fhirResource.delete as any).mockResolvedValue({});
 
-      await expect(store.update('Patient', 'patient-123', updatePatient)).rejects.toThrow(
-        HTTPException
-      );
+      // Test that update throws HTTPException with 'Conflict' message
       await expect(store.update('Patient', 'patient-123', updatePatient)).rejects.toThrow(
         'Conflict'
       );

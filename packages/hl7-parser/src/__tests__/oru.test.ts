@@ -8,7 +8,7 @@ import { ORUParser } from '../messages/oru';
 describe('ORUParser', () => {
   const sampleORU = `MSH|^~\\&|LAB|HOSPITAL|INTEGRA|BRASIL|20231215120000||ORU^R01|MSG001|P|2.5
 PID|1||123456^^^HOSPITAL^MR||DOE^JOHN||19800101|M
-OBR|1|ORD123||CBC^Complete Blood Count^LN|||20231215100000||||||||DR^SMITH^JOHN||||||||F
+OBR|1|ORD123||CBC^Complete Blood Count^LN|||20231215100000|||||||||DR^SMITH^JOHN|||||||||F
 OBX|1|NM|WBC^White Blood Cells^LN||12.5|10^9/L|4.0-11.0|H|||F|||20231215100000
 OBX|2|NM|RBC^Red Blood Cells^LN||4.8|10^12/L|4.5-6.0|N|||F|||20231215100000
 OBX|3|NM|HGB^Hemoglobin^LN||14.2|g/dL|13.5-17.5|N|||F|||20231215100000`;

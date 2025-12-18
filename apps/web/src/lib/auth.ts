@@ -2,8 +2,25 @@ import { WorkOS } from '@workos-inc/node';
 import { SignJWT, jwtVerify } from 'jose';
 import { cookies } from 'next/headers';
 
-const workos = new WorkOS(process.env.WORKOS_API_KEY);
-const clientId = process.env.WORKOS_CLIENT_ID!;
+// Lazy initialization to allow build without env vars
+let workosInstance: WorkOS | null = null;
+
+function getWorkOS(): WorkOS {
+  if (!workosInstance) {
+    if (!process.env.WORKOS_API_KEY) {
+      throw new Error('WORKOS_API_KEY environment variable is required');
+    }
+    workosInstance = new WorkOS(process.env.WORKOS_API_KEY);
+  }
+  return workosInstance;
+}
+
+function getClientId(): string {
+  if (!process.env.WORKOS_CLIENT_ID) {
+    throw new Error('WORKOS_CLIENT_ID environment variable is required');
+  }
+  return process.env.WORKOS_CLIENT_ID;
+}
 
 const secretKey = new TextEncoder().encode(
   process.env.WORKOS_COOKIE_PASSWORD || 'default-secret-key-change-in-production'
@@ -19,9 +36,9 @@ export interface Session {
 }
 
 export async function getAuthorizationUrl(redirectUri?: string) {
-  const authorizationUrl = workos.userManagement.getAuthorizationUrl({
+  const authorizationUrl = getWorkOS().userManagement.getAuthorizationUrl({
     provider: 'authkit',
-    clientId,
+    clientId: getClientId(),
     redirectUri:
       redirectUri || process.env.WORKOS_REDIRECT_URI || 'http://localhost:3000/api/auth/callback',
   });
@@ -29,10 +46,12 @@ export async function getAuthorizationUrl(redirectUri?: string) {
 }
 
 export async function authenticateWithCode(code: string) {
-  const { user, accessToken, refreshToken } = await workos.userManagement.authenticateWithCode({
-    code,
-    clientId,
-  });
+  const { user, accessToken, refreshToken } = await getWorkOS().userManagement.authenticateWithCode(
+    {
+      code,
+      clientId: getClientId(),
+    }
+  );
   return { user, accessToken, refreshToken };
 }
 
@@ -66,4 +85,4 @@ export async function clearSession() {
   cookieStore.delete('session');
 }
 
-export { workos };
+export { getWorkOS as workos };

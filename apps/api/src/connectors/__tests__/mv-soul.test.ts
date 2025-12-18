@@ -70,7 +70,8 @@ describe('MVSoulConnector', () => {
     const xml = '<?xml version="1.0"?><response><sucesso>true</sucesso></response>';
     const parsed = connector.parseXmlResponse(xml);
 
-    expect(parsed.response.sucesso).toBe('true');
+    // XML parser converts "true" string to boolean true
+    expect(parsed.response.sucesso).toBe(true);
   });
 
   it('should transform data to MV format', () => {

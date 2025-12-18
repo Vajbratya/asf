@@ -51,7 +51,8 @@ export class TasyConnector extends GenericHL7Connector {
   protected validateConfig(): void {
     super.validateConfig();
 
-    if (this.tasyConfig.enableZSegments && !this.tasyConfig.segments) {
+    // Guard against being called during parent constructor before tasyConfig is set
+    if (this.tasyConfig && this.tasyConfig.enableZSegments && !this.tasyConfig.segments) {
       this.logger.warn('Z-segments enabled but no segment configuration provided');
     }
   }

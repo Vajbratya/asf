@@ -8,8 +8,8 @@
  * ZOR - Extended Order Information
  */
 
-import { HL7Message, HL7Segment } from "../types";
-import { HL7Parser } from "../parser";
+import { HL7Message, HL7Segment } from '../types';
+import { HL7Parser } from '../parser';
 
 /**
  * ZPD - Extended Patient Demographics (Tasy-specific)
@@ -79,7 +79,7 @@ export class ZSegmentParser {
    * ZPD|Mother Name|Nationality|Ethnicity|Religion|Education|Occupation|Marital|CPF|RG|CNS|Birth Place
    */
   static parseZPD(message: HL7Message): ZPDSegment | null {
-    const zpdSegment = HL7Parser.getSegment(message, "ZPD");
+    const zpdSegment = HL7Parser.getSegment(message, 'ZPD');
     if (!zpdSegment) {
       return null;
     }
@@ -104,19 +104,16 @@ export class ZSegmentParser {
    * ZPV|Clinic|Sector|Specialty|Urgency|AdmissionType|DischargeType|Reason|PrincipalDx|SecondaryDx1~SecondaryDx2
    */
   static parseZPV(message: HL7Message): ZPVSegment | null {
-    const zpvSegment = HL7Parser.getSegment(message, "ZPV");
+    const zpvSegment = HL7Parser.getSegment(message, 'ZPV');
     if (!zpvSegment) {
       return null;
     }
 
-    const delimiters = message.delimiters;
-
     // ZPV-9: Secondary diagnoses (may have repetitions)
-    const secondaryDxField = HL7Parser.getField(zpvSegment, 9);
-    const secondaryDiagnoses = secondaryDxField
-      ? secondaryDxField
-          .split(delimiters.repetition)
-          .filter((d) => d.length > 0)
+    // Fields array is 0-indexed, so field 9 is at index 8
+    const secondaryDxRepetitions = zpvSegment.fields[8];
+    const secondaryDiagnoses = secondaryDxRepetitions
+      ? secondaryDxRepetitions.filter((d) => d.length > 0)
       : undefined;
 
     return {
@@ -137,7 +134,7 @@ export class ZSegmentParser {
    * ZIN|PlanType|PlanModality|ValidityDate|CardNumber|ANSCode|CompanyCode|ContractNumber|HolderName|HolderCPF
    */
   static parseZIN(message: HL7Message): ZINSegment | null {
-    const zinSegment = HL7Parser.getSegment(message, "ZIN");
+    const zinSegment = HL7Parser.getSegment(message, 'ZIN');
     if (!zinSegment) {
       return null;
     }
@@ -160,15 +157,13 @@ export class ZSegmentParser {
    * ZOR|RequestingUnit|ExecutingUnit|Priority|ClinicalIndication|RequestType|AuthNumber|GuideNumber|Quantity|Value
    */
   static parseZOR(message: HL7Message): ZORSegment | null {
-    const zorSegment = HL7Parser.getSegment(message, "ZOR");
+    const zorSegment = HL7Parser.getSegment(message, 'ZOR');
     if (!zorSegment) {
       return null;
     }
 
     const quantityField = HL7Parser.getField(zorSegment, 8);
-    const procedureQuantity = quantityField
-      ? parseInt(quantityField, 10)
-      : undefined;
+    const procedureQuantity = quantityField ? parseInt(quantityField, 10) : undefined;
 
     const valueField = HL7Parser.getField(zorSegment, 9);
     const procedureValue = valueField ? parseFloat(valueField) : undefined;
@@ -181,9 +176,7 @@ export class ZSegmentParser {
       requestType: HL7Parser.getField(zorSegment, 5) || undefined,
       authorizationNumber: HL7Parser.getField(zorSegment, 6) || undefined,
       guideNumber: HL7Parser.getField(zorSegment, 7) || undefined,
-      procedureQuantity: isNaN(procedureQuantity!)
-        ? undefined
-        : procedureQuantity,
+      procedureQuantity: isNaN(procedureQuantity!) ? undefined : procedureQuantity,
       procedureValue: isNaN(procedureValue!) ? undefined : procedureValue,
     };
   }
@@ -210,13 +203,13 @@ export class ZSegmentParser {
    */
   static getMaritalStatusDescription(code: string): string {
     const descriptions: Record<string, string> = {
-      S: "Solteiro(a)",
-      C: "Casado(a)",
-      V: "Viúvo(a)",
-      D: "Divorciado(a)",
-      P: "Separado(a)",
-      U: "União Estável",
-      I: "Ignorado",
+      S: 'Solteiro(a)',
+      C: 'Casado(a)',
+      V: 'Viúvo(a)',
+      D: 'Divorciado(a)',
+      P: 'Separado(a)',
+      U: 'União Estável',
+      I: 'Ignorado',
     };
 
     return descriptions[code] || code;
@@ -227,12 +220,12 @@ export class ZSegmentParser {
    */
   static getEthnicityDescription(code: string): string {
     const descriptions: Record<string, string> = {
-      "1": "Branca",
-      "2": "Preta",
-      "3": "Parda",
-      "4": "Amarela",
-      "5": "Indígena",
-      "9": "Sem informação",
+      '1': 'Branca',
+      '2': 'Preta',
+      '3': 'Parda',
+      '4': 'Amarela',
+      '5': 'Indígena',
+      '9': 'Sem informação',
     };
 
     return descriptions[code] || code;
@@ -243,7 +236,7 @@ export class ZSegmentParser {
    */
   static validateCPF(cpf: string): boolean {
     // Remove non-digits
-    const cleaned = cpf.replace(/\D/g, "");
+    const cleaned = cpf.replace(/\D/g, '');
 
     if (cleaned.length !== 11) {
       return false;
@@ -269,10 +262,7 @@ export class ZSegmentParser {
     let digit2 = 11 - (sum % 11);
     if (digit2 >= 10) digit2 = 0;
 
-    return (
-      parseInt(cleaned.charAt(9)) === digit1 &&
-      parseInt(cleaned.charAt(10)) === digit2
-    );
+    return parseInt(cleaned.charAt(9)) === digit1 && parseInt(cleaned.charAt(10)) === digit2;
   }
 
   /**
@@ -280,7 +270,7 @@ export class ZSegmentParser {
    */
   static validateCNS(cns: string): boolean {
     // Remove non-digits
-    const cleaned = cns.replace(/\D/g, "");
+    const cleaned = cns.replace(/\D/g, '');
 
     if (cleaned.length !== 15) {
       return false;
@@ -305,21 +295,21 @@ export class ZSegmentParser {
    * Format CPF for display (XXX.XXX.XXX-XX)
    */
   static formatCPF(cpf: string): string {
-    const cleaned = cpf.replace(/\D/g, "");
+    const cleaned = cpf.replace(/\D/g, '');
     if (cleaned.length !== 11) {
       return cpf;
     }
-    return cleaned.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4");
+    return cleaned.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
   }
 
   /**
    * Format CNS for display (XXX XXXX XXXX XXXX)
    */
   static formatCNS(cns: string): string {
-    const cleaned = cns.replace(/\D/g, "");
+    const cleaned = cns.replace(/\D/g, '');
     if (cleaned.length !== 15) {
       return cns;
     }
-    return cleaned.replace(/(\d{3})(\d{4})(\d{4})(\d{4})/, "$1 $2 $3 $4");
+    return cleaned.replace(/(\d{3})(\d{4})(\d{4})(\d{4})/, '$1 $2 $3 $4');
   }
 }

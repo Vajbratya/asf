@@ -79,7 +79,8 @@ export class MVSoulConnector extends GenericHL7Connector {
   protected validateConfig(): void {
     super.validateConfig();
 
-    if (this.mvConfig.enableResultsIntegration && !this.mvConfig.xmlEndpoint) {
+    // Guard against being called during parent constructor before mvConfig is set
+    if (this.mvConfig && this.mvConfig.enableResultsIntegration && !this.mvConfig.xmlEndpoint) {
       this.logger.warn('Results integration enabled but no XML endpoint configured');
     }
   }

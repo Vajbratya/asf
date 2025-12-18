@@ -3,7 +3,7 @@
  * Matches webhooks by rules and routes messages to destinations
  */
 
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -33,7 +33,8 @@ export class RouterService {
     const matchingWebhooks = webhooks.filter((webhook) => {
       // Check if webhook listens to this event
       const event = `message.${message.status}`;
-      if (!webhook.events.includes(event)) {
+      const events = webhook.events as string[];
+      if (!events || !events.includes(event)) {
         return false;
       }
 
@@ -73,12 +74,12 @@ export class RouterService {
           data: {
             messageId: message.id,
             webhookId: webhook.id,
-            status: "pending",
+            status: 'PENDING',
             attempts: 0,
             maxAttempts: 3,
           },
-        }),
-      ),
+        })
+      )
     );
 
     return {
@@ -108,16 +109,13 @@ export class RouterService {
       (acc, d) => {
         const webhookName = d.webhook.name;
         if (!acc[webhookName]) {
-          acc[webhookName] = { total: 0, delivered: 0, failed: 0, pending: 0 };
+          acc[webhookName] = { total: 0, DELIVERED: 0, FAILED: 0, PENDING: 0 };
         }
         acc[webhookName].total++;
-        acc[webhookName][d.status as "delivered" | "failed" | "pending"]++;
+        acc[webhookName][d.status as 'DELIVERED' | 'FAILED' | 'PENDING']++;
         return acc;
       },
-      {} as Record<
-        string,
-        { total: number; delivered: number; failed: number; pending: number }
-      >,
+      {} as Record<string, { total: number; DELIVERED: number; FAILED: number; PENDING: number }>
     );
 
     return {

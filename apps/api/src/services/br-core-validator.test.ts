@@ -75,7 +75,7 @@ describe('BRCoreValidator', () => {
 
     it('should validate multiple known valid CPFs', () => {
       // These are mathematically valid CPF numbers (not necessarily assigned)
-      const validCPFs = ['12345678909', '11144477735', '52599927035'];
+      const validCPFs = ['12345678909', '11144477735', '52998224725'];
 
       validCPFs.forEach((cpf) => {
         const result = validator.validateCPF(cpf);
@@ -97,31 +97,39 @@ describe('BRCoreValidator', () => {
   describe('validateCNS', () => {
     it('should validate definitive CNS starting with 1', () => {
       // Valid CNS starting with 1 (definitive)
-      const result = validator.validateCNS('100000000000001');
+      // sum = 1*15 + 0*14 + ... + 0*2 + 7*1 = 15 + 7 = 22, 22 % 11 = 0 ✓
+      const result = validator.validateCNS('100000000000007');
       expect(result.valid).toBe(true);
     });
 
     it('should validate definitive CNS starting with 2', () => {
       // Valid CNS starting with 2 (definitive)
-      const result = validator.validateCNS('200000000000002');
+      // sum = 2*15 + 0*14 + ... + 0*2 + 8*1 = 30 + 8 = 38, but need mod 11 = 0
+      // 2*15 = 30, 30 % 11 = 8, need last digit = 11-8 = 3
+      // sum = 2*15 + 0*14 + ... + 0*2 + 3*1 = 30 + 3 = 33, 33 % 11 = 0 ✓
+      const result = validator.validateCNS('200000000000003');
       expect(result.valid).toBe(true);
     });
 
     it('should validate provisional CNS starting with 7', () => {
       // Valid CNS starting with 7 (provisional)
-      const result = validator.validateCNS('700000000000007');
+      // 7*15 = 105, 105 % 11 = 6, need last digit such that total % 11 = 0
+      // need to add 11 - 6 = 5
+      const result = validator.validateCNS('700000000000005');
       expect(result.valid).toBe(true);
     });
 
     it('should validate provisional CNS starting with 8', () => {
       // Valid CNS starting with 8 (provisional)
-      const result = validator.validateCNS('800000000000008');
+      // 8*15 = 120, 120 % 11 = 10, need 11 - 10 = 1
+      const result = validator.validateCNS('800000000000001');
       expect(result.valid).toBe(true);
     });
 
     it('should validate provisional CNS starting with 9', () => {
       // Valid CNS starting with 9 (provisional)
-      const result = validator.validateCNS('900000000000009');
+      // 9*15 = 135, 135 % 11 = 3, need 11 - 3 = 8
+      const result = validator.validateCNS('900000000000008');
       expect(result.valid).toBe(true);
     });
 
@@ -180,12 +188,14 @@ describe('BRCoreValidator', () => {
     });
 
     it('should validate CNS with formatting', () => {
-      const result = validator.validateCNS('100 0000 0000 0001');
+      // Using valid CNS 100000000000007
+      const result = validator.validateCNS('100 0000 0000 0007');
       expect(result.valid).toBe(true);
     });
 
     it('should handle CNS with various separators', () => {
-      const result = validator.validateCNS('100-0000-0000-0001');
+      // Using valid CNS 100000000000007
+      const result = validator.validateCNS('100-0000-0000-0007');
       expect(result.valid).toBe(true);
     });
 

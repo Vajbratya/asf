@@ -27,22 +27,23 @@ export class ProcessorService {
       // Update status to processing
       await prisma.message.update({
         where: { id: messageId },
-        data: { status: 'processing' },
+        data: { status: 'PROCESSING' },
       });
 
       // Parse and transform based on protocol
       let fhirResources: any;
+      const rawMessage = message.rawMessage || '';
       switch (message.protocol) {
-        case 'HL7v2':
-          fhirResources = await this.transformHL7toFHIR(message.rawMessage);
+        case 'HL7V2':
+          fhirResources = await this.transformHL7toFHIR(rawMessage);
           break;
         case 'XML':
-          fhirResources = await this.transformXMLtoFHIR(message.rawMessage);
+          fhirResources = await this.transformXMLtoFHIR(rawMessage);
           break;
         case 'FHIR':
           // Safely parse JSON with error handling
           try {
-            fhirResources = JSON.parse(message.rawMessage);
+            fhirResources = JSON.parse(rawMessage);
           } catch (parseError) {
             throw new Error(
               `Invalid JSON in FHIR message: ${parseError instanceof Error ? parseError.message : 'Unknown error'}`
@@ -58,9 +59,10 @@ export class ProcessorService {
       await prisma.message.update({
         where: { id: messageId },
         data: {
-          status: 'processed',
+          status: 'PROCESSED',
           fhirResources,
           processingTime,
+          processedAt: new Date(),
         },
       });
 
@@ -71,7 +73,8 @@ export class ProcessorService {
       await prisma.message.update({
         where: { id: messageId },
         data: {
-          status: 'failed',
+          status: 'FAILED',
+          error: error instanceof Error ? error.message : 'Unknown error',
           errorMessage: error instanceof Error ? error.message : 'Unknown error',
           processingTime,
         },

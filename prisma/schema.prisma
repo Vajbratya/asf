@@ -64,6 +64,21 @@ enum MessageStatus {
   SUCCESS
   FAILED
   RETRY
+  RECEIVED
+  PROCESSED
+}
+
+enum MessageProtocol {
+  HL7V2
+  XML
+  FHIR
+  CUSTOM
+}
+
+enum DeliveryStatus {
+  PENDING
+  DELIVERED
+  FAILED
 }
 
 enum SubscriptionStatus {
@@ -164,22 +179,39 @@ model Connector {
 }
 
 model Message {
-  id          String           @id @default(cuid())
-  connectorId String
-  direction   MessageDirection
-  status      MessageStatus    @default(PENDING)
-  payload     Json             // Raw message payload
-  headers     Json?            // Message headers/metadata
-  error       String?          // Error message if failed
-  retryCount  Int              @default(0)
-  processedAt DateTime?
-  createdAt   DateTime         @default(now())
-  updatedAt   DateTime         @updatedAt
+  id             String            @id @default(cuid())
+  connectorId    String
+  organizationId String            // Organization for routing and filtering
+  direction      MessageDirection
+  status         MessageStatus     @default(PENDING)
 
-  connector Connector @relation(fields: [connectorId], references: [id], onDelete: Cascade)
+  // Message content
+  rawMessage     String?           @db.Text // Raw message content
+  payload        Json?             // Parsed message payload
+  headers        Json?             // Message headers/metadata
+
+  // Protocol and type info
+  protocol       MessageProtocol?  // HL7V2, XML, FHIR, CUSTOM
+  messageType    String?           // ADT, ORM, ORU, etc.
+
+  // Processing info
+  fhirResources  Json?             // Transformed FHIR resources
+  processingTime Int?              // Processing time in ms
+  error          String?           // Error message if failed
+  errorMessage   String?           // Detailed error message
+  retryCount     Int               @default(0)
+  processedAt    DateTime?
+
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+
+  connector  Connector          @relation(fields: [connectorId], references: [id], onDelete: Cascade)
+  deliveries MessageDelivery[]
 
   @@index([connectorId])
+  @@index([organizationId])
   @@index([status])
+  @@index([messageType])
   @@index([createdAt])
 }
 
@@ -222,19 +254,43 @@ model ApiKey {
 }
 
 model Webhook {
-  id             String   @id @default(cuid())
-  organizationId String
-  url            String
-  events         Json     // Array of event types to listen to
-  secret         String   // For webhook signature verification
-  active         Boolean  @default(true)
+  id              String   @id @default(cuid())
+  organizationId  String
+  name            String   // Display name for the webhook
+  url             String
+  events          Json     // Array of event types to listen to
+  filters         Json?    // Optional filters (messageType, status, connectorId)
+  secret          String   // For webhook signature verification
+  active          Boolean  @default(true)
   lastTriggeredAt DateTime?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organization Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  deliveries   MessageDelivery[]
 
   @@index([organizationId])
+  @@index([active])
+}
+
+model MessageDelivery {
+  id          String         @id @default(cuid())
+  messageId   String
+  webhookId   String
+  status      DeliveryStatus @default(PENDING)
+  attempts    Int            @default(0)
+  maxAttempts Int            @default(3)
+  lastError   String?
+  deliveredAt DateTime?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  message Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  webhook Webhook @relation(fields: [webhookId], references: [id], onDelete: Cascade)
+
+  @@index([messageId])
+  @@index([webhookId])
+  @@index([status])
 }
 
 model Subscription {
