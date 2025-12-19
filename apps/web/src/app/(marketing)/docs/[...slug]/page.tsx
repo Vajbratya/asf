@@ -1,8 +1,5 @@
-'use client';
-
 import Link from 'next/link';
-import { useParams } from 'next/navigation';
-import { useState } from 'react';
+import DocsClient from './DocsClient';
 
 // All documentation content organized by route
 const docsContent: Record<
@@ -59,9 +56,9 @@ console.log(msg.messageType); // "ADT^A01"
 console.log(msg.messageControlId); // "123"`}
         </pre>
 
-        <div className="mt-8 p-4 bg-orange-50 border border-orange-200 rounded-lg">
-          <p className="font-medium text-orange-800">Proximo passo:</p>
-          <Link href="/docs/criando-conta" className="text-orange-600 hover:underline">
+        <div className="mt-8 p-4 bg-gray-50 border border-gray-200 rounded-lg">
+          <p className="font-medium text-gray-800">Proximo passo:</p>
+          <Link href="/docs/criando-conta" className="text-gray-600 hover:underline">
             Criar sua conta no IntegraSaude →
           </Link>
         </div>
@@ -78,7 +75,7 @@ console.log(msg.messageControlId); // "123"`}
         <ol>
           <li>
             Acesse{' '}
-            <Link href="/signup" className="text-orange-600">
+            <Link href="/signup" className="text-gray-600">
               integrasaude.com.br/signup
             </Link>
           </li>
@@ -107,9 +104,9 @@ fetch('https://api.integrasaude.com.br/v1/messages', {
           .
         </p>
 
-        <div className="mt-8 p-4 bg-orange-50 border border-orange-200 rounded-lg">
-          <p className="font-medium text-orange-800">Proximo passo:</p>
-          <Link href="/docs/conectores" className="text-orange-600 hover:underline">
+        <div className="mt-8 p-4 bg-gray-50 border border-gray-200 rounded-lg">
+          <p className="font-medium text-gray-800">Proximo passo:</p>
+          <Link href="/docs/conectores" className="text-gray-600 hover:underline">
             Configurar seu primeiro conector →
           </Link>
         </div>
@@ -145,7 +142,7 @@ fetch('https://api.integrasaude.com.br/v1/messages', {
             <Link
               key={c.name}
               href={c.href}
-              className="block p-4 border rounded-lg hover:border-orange-500 transition"
+              className="block p-4 border rounded-lg hover:border-gray-500 transition"
             >
               <p className="font-medium text-gray-900">{c.name}</p>
               <p className="text-sm text-gray-600">{c.desc}</p>
@@ -1467,187 +1464,43 @@ console.log(formatCNS('123456789012345'));  // "123 4567 8901 2345"`}
   },
 };
 
-// Navigation structure for sidebar
-const navSections = [
-  {
-    title: 'Primeiros Passos',
-    items: [
-      { slug: 'introducao', title: 'Introducao' },
-      { slug: 'criando-conta', title: 'Criando sua Conta' },
-      { slug: 'conectores', title: 'Configurando Conectores' },
-      { slug: 'primeira-mensagem', title: 'Primeira Mensagem' },
-    ],
-  },
-  {
-    title: 'Conectores',
-    items: [
-      { slug: 'conectores/tasy', title: 'Tasy' },
-      { slug: 'conectores/mv-soul', title: 'MV Soul' },
-      { slug: 'conectores/pixeon', title: 'Pixeon' },
-      { slug: 'conectores/hl7-generico', title: 'HL7 Generico' },
-    ],
-  },
-  {
-    title: 'API Reference',
-    items: [
-      { slug: 'api/autenticacao', title: 'Autenticacao' },
-      { slug: 'api/mensagens', title: 'Mensagens' },
-      { slug: 'api/conectores', title: 'Conectores' },
-      { slug: 'api/webhooks', title: 'Webhooks' },
-    ],
-  },
-  {
-    title: 'HL7 v2',
-    items: [
-      { slug: 'hl7/overview', title: 'Overview' },
-      { slug: 'hl7/adt', title: 'Mensagens ADT' },
-      { slug: 'hl7/orm', title: 'Mensagens ORM' },
-      { slug: 'hl7/oru', title: 'Mensagens ORU' },
-    ],
-  },
-  {
-    title: 'FHIR R4',
-    items: [
-      { slug: 'fhir/overview', title: 'Overview' },
-      { slug: 'fhir/patient', title: 'Patient' },
-      { slug: 'fhir/encounter', title: 'Encounter' },
-      { slug: 'fhir/br-core', title: 'BR-Core Profiles' },
-    ],
-  },
-  {
-    title: 'Seguranca',
-    items: [
-      { slug: 'seguranca/lgpd', title: 'LGPD' },
-      { slug: 'seguranca/criptografia', title: 'Criptografia' },
-      { slug: 'seguranca/auditoria', title: 'Auditoria' },
-      { slug: 'seguranca/acesso', title: 'Controle de Acesso' },
-    ],
-  },
+// All valid slugs for static generation
+const allSlugs = [
+  ['introducao'],
+  ['criando-conta'],
+  ['conectores'],
+  ['primeira-mensagem'],
+  ['conectores', 'tasy'],
+  ['conectores', 'mv-soul'],
+  ['conectores', 'pixeon'],
+  ['conectores', 'hl7-generico'],
+  ['api', 'autenticacao'],
+  ['api', 'mensagens'],
+  ['api', 'conectores'],
+  ['api', 'webhooks'],
+  ['hl7', 'overview'],
+  ['hl7', 'adt'],
+  ['hl7', 'orm'],
+  ['hl7', 'oru'],
+  ['fhir', 'overview'],
+  ['fhir', 'patient'],
+  ['fhir', 'encounter'],
+  ['fhir', 'br-core'],
+  ['seguranca', 'lgpd'],
+  ['seguranca', 'criptografia'],
+  ['seguranca', 'auditoria'],
+  ['seguranca', 'acesso'],
 ];
 
-export default function DocPage() {
-  const params = useParams();
-  const slugArray = params.slug as string[];
-  const currentSlug = slugArray?.join('/') || 'introducao';
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+// Generate static params for all doc pages
+export function generateStaticParams() {
+  return allSlugs.map((slug) => ({ slug }));
+}
 
-  const doc = docsContent[currentSlug];
+// Server component
+export default function DocPage({ params }: { params: { slug: string[] } }) {
+  const currentSlug = params.slug?.join('/') || 'introducao';
+  const doc = docsContent[currentSlug] || null;
 
-  if (!doc) {
-    return (
-      <main className="min-h-screen bg-white pt-20">
-        <div className="max-w-4xl mx-auto px-4 py-16 text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">Pagina nao encontrada</h1>
-          <p className="text-gray-600 mb-8">A documentacao que voce procura nao existe.</p>
-          <Link href="/docs" className="text-orange-600 hover:underline">
-            ← Voltar para Documentacao
-          </Link>
-        </div>
-      </main>
-    );
-  }
-
-  return (
-    <main className="min-h-screen bg-white pt-20">
-      <div className="max-w-7xl mx-auto px-4 md:px-6 py-8">
-        <div className="flex gap-8">
-          {/* Sidebar */}
-          <aside className="hidden lg:block w-64 flex-shrink-0">
-            <nav className="sticky top-24 space-y-6">
-              {navSections.map((section) => (
-                <div key={section.title}>
-                  <h3 className="font-semibold text-gray-900 mb-2">{section.title}</h3>
-                  <ul className="space-y-1">
-                    {section.items.map((item) => (
-                      <li key={item.slug}>
-                        <Link
-                          href={`/docs/${item.slug}`}
-                          className={`block px-3 py-1.5 rounded-lg text-sm transition ${
-                            currentSlug === item.slug
-                              ? 'bg-orange-100 text-orange-700 font-medium'
-                              : 'text-gray-600 hover:bg-gray-100'
-                          }`}
-                        >
-                          {item.title}
-                        </Link>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ))}
-            </nav>
-          </aside>
-
-          {/* Mobile sidebar toggle */}
-          <button
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="lg:hidden fixed bottom-4 right-4 z-50 bg-orange-500 text-white p-3 rounded-full shadow-lg"
-          >
-            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M4 6h16M4 12h16M4 18h16"
-              />
-            </svg>
-          </button>
-
-          {/* Mobile sidebar */}
-          {sidebarOpen && (
-            <div
-              className="lg:hidden fixed inset-0 z-40 bg-black/50"
-              onClick={() => setSidebarOpen(false)}
-            >
-              <aside
-                className="absolute left-0 top-0 h-full w-64 bg-white p-4 overflow-y-auto"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <nav className="space-y-6">
-                  {navSections.map((section) => (
-                    <div key={section.title}>
-                      <h3 className="font-semibold text-gray-900 mb-2">{section.title}</h3>
-                      <ul className="space-y-1">
-                        {section.items.map((item) => (
-                          <li key={item.slug}>
-                            <Link
-                              href={`/docs/${item.slug}`}
-                              onClick={() => setSidebarOpen(false)}
-                              className={`block px-3 py-1.5 rounded-lg text-sm transition ${
-                                currentSlug === item.slug
-                                  ? 'bg-orange-100 text-orange-700 font-medium'
-                                  : 'text-gray-600 hover:bg-gray-100'
-                              }`}
-                            >
-                              {item.title}
-                            </Link>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  ))}
-                </nav>
-              </aside>
-            </div>
-          )}
-
-          {/* Content */}
-          <article className="flex-1 min-w-0">
-            <div className="mb-8">
-              <Link href="/docs" className="text-sm text-gray-500 hover:text-gray-700">
-                ← Documentacao
-              </Link>
-            </div>
-
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">{doc.title}</h1>
-            <p className="text-lg text-gray-600 mb-8">{doc.description}</p>
-
-            <div className="prose prose-lg max-w-none prose-headings:text-gray-900 prose-a:text-orange-600 prose-code:text-orange-700 prose-pre:bg-gray-900">
-              {doc.content}
-            </div>
-          </article>
-        </div>
-      </div>
-    </main>
-  );
+  return <DocsClient slug={currentSlug} doc={doc} />;
 }
