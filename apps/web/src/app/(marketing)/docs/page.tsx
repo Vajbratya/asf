@@ -2,8 +2,8 @@ import Link from 'next/link';
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Documentacao | IntegraSaude',
-  description: 'Documentacao completa da plataforma IntegraSaude.',
+  title: 'Documentação | INTEGRA by Laudos.AI',
+  description: 'Documentação completa da plataforma INTEGRA by Laudos.AI.',
 };
 
 export default function DocsPage() {
@@ -12,7 +12,7 @@ export default function DocsPage() {
       title: 'Primeiros Passos',
       description: 'Comece a integrar seus sistemas em minutos',
       links: [
-        { title: 'Introducao', href: '/docs/introducao' },
+        { title: 'Introdução', href: '/docs/introducao' },
         { title: 'Criando sua conta', href: '/docs/criando-conta' },
         { title: 'Configurando conectores', href: '/docs/conectores' },
         { title: 'Enviando sua primeira mensagem', href: '/docs/primeira-mensagem' },
@@ -20,29 +20,29 @@ export default function DocsPage() {
     },
     {
       title: 'Conectores',
-      description: 'Configure conexoes com sistemas hospitalares',
+      description: 'Configure conexões com sistemas hospitalares',
       links: [
         { title: 'Tasy', href: '/docs/conectores/tasy' },
         { title: 'MV Soul', href: '/docs/conectores/mv-soul' },
         { title: 'Pixeon', href: '/docs/conectores/pixeon' },
-        { title: 'HL7 Generico', href: '/docs/conectores/hl7-generico' },
+        { title: 'HL7 Genérico', href: '/docs/conectores/hl7-generico' },
       ],
     },
     {
-      title: 'API Reference',
-      description: 'Documentacao completa da API REST',
+      title: 'Referência da API',
+      description: 'Documentação completa da API REST',
       links: [
-        { title: 'Autenticacao', href: '/docs/api/autenticacao' },
+        { title: 'Autenticação', href: '/docs/api/autenticacao' },
         { title: 'Mensagens', href: '/docs/api/mensagens' },
         { title: 'Conectores', href: '/docs/api/conectores' },
         { title: 'Webhooks', href: '/docs/api/webhooks' },
       ],
     },
     {
-      title: 'Padroes HL7',
-      description: 'Referencia dos padroes HL7 suportados',
+      title: 'Padrões HL7',
+      description: 'Referência dos padrões HL7 suportados',
       links: [
-        { title: 'HL7 v2 Overview', href: '/docs/hl7/overview' },
+        { title: 'Visão Geral HL7 v2', href: '/docs/hl7/overview' },
         { title: 'Mensagens ADT', href: '/docs/hl7/adt' },
         { title: 'Mensagens ORM', href: '/docs/hl7/orm' },
         { title: 'Mensagens ORU', href: '/docs/hl7/oru' },
@@ -50,17 +50,17 @@ export default function DocsPage() {
     },
     {
       title: 'FHIR R4',
-      description: 'Transformacao e recursos FHIR',
+      description: 'Transformação e recursos FHIR',
       links: [
-        { title: 'FHIR Overview', href: '/docs/fhir/overview' },
+        { title: 'Visão Geral FHIR', href: '/docs/fhir/overview' },
         { title: 'Patient Resource', href: '/docs/fhir/patient' },
         { title: 'Encounter Resource', href: '/docs/fhir/encounter' },
         { title: 'BR-Core Profiles', href: '/docs/fhir/br-core' },
       ],
     },
     {
-      title: 'Seguranca',
-      description: 'Conformidade e protecao de dados',
+      title: 'Segurança',
+      description: 'Conformidade e proteção de dados',
       links: [
         { title: 'LGPD', href: '/docs/seguranca/lgpd' },
         { title: 'Criptografia', href: '/docs/seguranca/criptografia' },
@@ -75,10 +75,10 @@ export default function DocsPage() {
       {/* Hero */}
       <section className="py-16 bg-[#FAFAFA] border-b border-[#E5E5E5]">
         <div className="max-w-6xl mx-auto px-4 md:px-6">
-          <h1 className="text-4xl font-semibold text-[#1A1A1A] mb-4">Documentacao</h1>
+          <h1 className="text-4xl font-semibold text-[#1A1A1A] mb-4">Documentação</h1>
           <p className="text-lg text-[#1A1A1A]/60 max-w-2xl">
-            Tudo que voce precisa para integrar seus sistemas de saude com a plataforma
-            IntegraSaude.
+            Tudo que você precisa para integrar seus sistemas de saúde com a plataforma INTEGRA by
+            Laudos.AI.
           </p>
         </div>
       </section>
@@ -128,9 +128,9 @@ export default function DocsPage() {
       {/* CTA */}
       <section className="py-16 bg-[#1A1A1A]">
         <div className="max-w-4xl mx-auto px-4 md:px-6 text-center">
-          <h2 className="text-2xl font-semibold text-white mb-4">Nao encontrou o que procurava?</h2>
+          <h2 className="text-2xl font-semibold text-white mb-4">Não encontrou o que procurava?</h2>
           <p className="text-white/60 mb-8">
-            Nossa equipe de suporte esta pronta para ajudar com qualquer duvida.
+            Nossa equipe de suporte está pronta para ajudar com qualquer dúvida.
           </p>
           <Link
             href="/contato"

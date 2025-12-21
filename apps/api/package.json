@@ -1,5 +1,5 @@
 {
-  "name": "@integrasaude/api",
+  "name": "@integra/api",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -17,7 +17,7 @@
   },
   "dependencies": {
     "@hono/node-server": "^1.4.1",
-    "@integrasaude/shared": "workspace:*",
+    "@integra/shared": "workspace:*",
     "@prisma/client": "^5.7.1",
     "@upstash/qstash": "^2.8.4",
     "@upstash/redis": "^1.28.0",

@@ -7,6 +7,10 @@ settings:
 importers:
 
   .:
+    dependencies:
+      '@upstash/redis':
+        specifier: ^1.28.0
+        version: 1.35.8
     devDependencies:
       prettier:
         specifier: ^3.1.1
@@ -26,7 +30,7 @@ importers:
       '@hono/zod-validator':
         specifier: ^0.2.1
         version: 0.2.2(hono@3.12.12)(zod@3.25.76)
-      '@integrasaude/shared':
+      '@integra/shared':
         specifier: workspace:*
         version: link:../../packages/shared
       '@prisma/client':
@@ -84,7 +88,7 @@ importers:
 
   apps/web:
     dependencies:
-      '@integrasaude/shared':
+      '@integra/shared':
         specifier: workspace:*
         version: link:../../packages/shared
       '@radix-ui/react-dialog':

@@ -11,23 +11,26 @@ function Navigation() {
     <nav className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-100">
       <div className="max-w-6xl mx-auto px-6">
         <div className="flex items-center justify-between h-16">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-gray-900 flex items-center justify-center">
-              <svg
-                className="w-5 h-5 text-white"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M13 10V3L4 14h7v7l9-11h-7z"
-                />
-              </svg>
+          <Link href="/" className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-r from-[#FF6B00] to-[#FF9500] flex items-center justify-center">
+                <svg
+                  className="w-5 h-5 text-white"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M13 10V3L4 14h7v7l9-11h-7z"
+                  />
+                </svg>
+              </div>
+              <span className="font-bold text-lg text-gray-900">INTEGRA</span>
             </div>
-            <span className="font-semibold text-lg text-gray-900">IntegraSaúde</span>
+            <span className="text-xs text-gray-400 hidden sm:block">by Laudos.AI</span>
           </Link>
 
           <div className="hidden md:flex items-center gap-8">
@@ -44,20 +47,20 @@ function Navigation() {
               Preços
             </a>
             <Link href="/docs" className="text-sm text-gray-500 hover:text-gray-900">
-              Docs
+              Documentação
             </Link>
           </div>
 
           <div className="flex items-center gap-3">
             <Link
               href="/login"
-              className="text-sm text-gray-600 hover:text-gray-900 hidden sm:block"
+              className="text-sm text-gray-600 hover:text-[#FF6B00] hidden sm:block"
             >
               Entrar
             </Link>
             <Link
               href="/signup"
-              className="px-4 py-2 bg-gray-900 hover:bg-gray-800 text-white text-sm font-medium rounded-lg transition-colors"
+              className="px-4 py-2 bg-gradient-to-r from-[#FF6B00] to-[#FF9500] hover:from-[#E55E00] hover:to-[#E58500] text-white text-sm font-medium rounded-lg transition-all"
             >
               Agendar Demo
             </Link>
@@ -75,15 +78,17 @@ function HeroSection() {
   return (
     <section className="pt-28 pb-20 bg-white">
       <div className="max-w-4xl mx-auto px-6 text-center">
-        <div className="inline-flex items-center gap-2 px-3 py-1 mb-6 rounded-full bg-gray-100 text-gray-600 text-sm">
-          <span className="w-2 h-2 rounded-full bg-green-500"></span>
+        <div className="inline-flex items-center gap-2 px-3 py-1 mb-6 rounded-full bg-gradient-to-r from-[#FF6B00]/10 to-[#FF9500]/10 text-[#FF6B00] text-sm">
+          <span className="w-2 h-2 rounded-full bg-gradient-to-r from-[#FF6B00] to-[#FF9500]"></span>
           Operacional • 280+ testes passando • 99.9% uptime
         </div>
 
         <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 leading-tight mb-6">
           Reduza o tempo de integração
           <br />
-          <span className="text-gray-400">de meses para dias</span>
+          <span className="bg-gradient-to-r from-[#FF6B00] to-[#FF9500] bg-clip-text text-transparent">
+            de meses para dias
+          </span>
         </h1>
 
         <p className="text-xl text-gray-600 max-w-2xl mx-auto mb-10">
@@ -94,7 +99,7 @@ function HeroSection() {
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-8">
           <Link
             href="/signup"
-            className="w-full sm:w-auto px-8 py-4 bg-gray-900 hover:bg-gray-800 text-white font-semibold rounded-lg transition-colors"
+            className="w-full sm:w-auto px-8 py-4 bg-[#FF6B00] hover:bg-[#E55E00] text-white font-semibold rounded-lg transition-colors"
           >
             Agendar Demonstração
           </Link>
@@ -108,7 +113,7 @@ function HeroSection() {
 
         <div className="flex items-center justify-center gap-8 text-sm text-gray-500">
           <span className="flex items-center gap-2">
-            <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+            <svg className="w-4 h-4 text-[#FF6B00]" fill="currentColor" viewBox="0 0 20 20">
               <path
                 fillRule="evenodd"
                 d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
@@ -118,7 +123,7 @@ function HeroSection() {
             LGPD Compliant
           </span>
           <span className="flex items-center gap-2">
-            <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+            <svg className="w-4 h-4 text-[#FF6B00]" fill="currentColor" viewBox="0 0 20 20">
               <path
                 fillRule="evenodd"
                 d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
@@ -128,7 +133,7 @@ function HeroSection() {
             Trial 14 dias
           </span>
           <span className="flex items-center gap-2">
-            <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+            <svg className="w-4 h-4 text-[#FF6B00]" fill="currentColor" viewBox="0 0 20 20">
               <path
                 fillRule="evenodd"
                 d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
@@ -357,15 +362,15 @@ function SolutionSection() {
             Exemplo real: Parse de ADT em 3 linhas
           </h3>
           <pre className="p-4 bg-gray-900 text-gray-100 rounded-lg overflow-x-auto text-sm">
-            <code>{`import { HL7Parser, ADTParser } from '@integrasaude/hl7-parser';
+            <code>{`import { HL7Parser, ADTParser } from '@integra/hl7-parser';
 
 const adt = ADTParser.parse(HL7Parser.parse(mensagemHL7));
 console.log(adt.patient.cpf, adt.patient.cns, adt.visit.location);`}</code>
           </pre>
           <p className="text-sm text-gray-500 mt-4">
             Documentação completa com 24 páginas de exemplos copy-paste em{' '}
-            <Link href="/docs" className="text-gray-900 underline">
-              integrasaude.com.br/docs
+            <Link href="/docs" className="text-[#FF6B00] underline">
+              integra.laudos.ai/docs
             </Link>
           </p>
         </div>
@@ -419,11 +424,11 @@ function ResultsSection() {
               </div>
               <div>
                 <div className="flex justify-between text-sm mb-1">
-                  <span className="text-gray-600">IntegraSaúde Professional</span>
+                  <span className="text-gray-600">INTEGRA Professional</span>
                   <span className="font-semibold text-gray-900">R$ 53.892</span>
                 </div>
                 <div className="h-3 bg-gray-200 rounded-full">
-                  <div className="h-3 bg-gray-900 rounded-full" style={{ width: '11%' }}></div>
+                  <div className="h-3 bg-[#FF6B00] rounded-full" style={{ width: '11%' }}></div>
                 </div>
               </div>
             </div>
@@ -597,7 +602,7 @@ function PricingSection() {
                 className={`block w-full py-3 text-center font-semibold rounded-lg transition-colors ${
                   plan.highlight
                     ? 'bg-white text-gray-900 hover:bg-gray-100'
-                    : 'bg-gray-900 text-white hover:bg-gray-800'
+                    : 'bg-[#FF6B00] text-white hover:bg-[#E55E00]'
                 }`}
               >
                 {plan.cta}
@@ -659,24 +664,24 @@ function FAQSection() {
 // ============================================================================
 function CTASection() {
   return (
-    <section className="py-24 bg-gray-900">
+    <section className="py-24 bg-gradient-to-br from-[#FF6B00] to-[#FF9500]">
       <div className="max-w-3xl mx-auto px-6 text-center">
         <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
           Pronto para eliminar a dor de cabeça?
         </h2>
-        <p className="text-lg text-gray-400 mb-10">
+        <p className="text-lg text-white/80 mb-10">
           Agende uma demonstração de 30 minutos. Mostramos como funciona com seus sistemas.
         </p>
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
           <Link
             href="/signup"
-            className="w-full sm:w-auto px-8 py-4 bg-white hover:bg-gray-100 text-gray-900 font-semibold rounded-lg transition-colors"
+            className="w-full sm:w-auto px-8 py-4 bg-white hover:bg-gray-100 text-[#FF6B00] font-semibold rounded-lg transition-colors"
           >
             Agendar Demonstração
           </Link>
           <Link
             href="/docs"
-            className="w-full sm:w-auto px-8 py-4 bg-transparent hover:bg-gray-800 text-white font-semibold rounded-lg border border-gray-700 transition-colors"
+            className="w-full sm:w-auto px-8 py-4 bg-transparent hover:bg-white/10 text-white font-semibold rounded-lg border border-white/30 transition-colors"
           >
             Ver Documentação
           </Link>
@@ -693,42 +698,61 @@ function Footer() {
   return (
     <footer className="py-12 bg-white border-t border-gray-100">
       <div className="max-w-5xl mx-auto px-6">
-        <div className="flex flex-col md:flex-row justify-between items-center gap-6">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded bg-gray-900 flex items-center justify-center">
-              <svg
-                className="w-4 h-4 text-white"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M13 10V3L4 14h7v7l9-11h-7z"
-                />
-              </svg>
-            </div>
-            <span className="font-semibold text-gray-900">IntegraSaúde</span>
-          </Link>
+        <div className="flex flex-col gap-8">
+          {/* Main footer content */}
+          <div className="flex flex-col md:flex-row justify-between items-center gap-6">
+            <Link href="/" className="flex items-center gap-2">
+              <div className="w-6 h-6 rounded bg-[#FF6B00] flex items-center justify-center">
+                <svg
+                  className="w-4 h-4 text-white"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M13 10V3L4 14h7v7l9-11h-7z"
+                  />
+                </svg>
+              </div>
+              <span className="font-bold text-gray-900">INTEGRA</span>
+              <span className="text-xs text-gray-400">by Laudos.AI</span>
+            </Link>
 
-          <div className="flex items-center gap-6 text-sm text-gray-500">
-            <Link href="/docs" className="hover:text-gray-900">
-              Documentação
-            </Link>
-            <Link href="/privacidade" className="hover:text-gray-900">
-              Privacidade
-            </Link>
-            <Link href="/termos" className="hover:text-gray-900">
-              Termos
-            </Link>
-            <Link href="/contato" className="hover:text-gray-900">
-              Contato
-            </Link>
+            <div className="flex items-center gap-6 text-sm text-gray-500">
+              <Link href="/docs" className="hover:text-[#FF6B00]">
+                Documentação
+              </Link>
+              <Link href="/privacidade" className="hover:text-[#FF6B00]">
+                Privacidade
+              </Link>
+              <Link href="/termos" className="hover:text-[#FF6B00]">
+                Termos
+              </Link>
+              <Link href="/contato" className="hover:text-[#FF6B00]">
+                Contato
+              </Link>
+            </div>
           </div>
 
-          <p className="text-sm text-gray-400">© {new Date().getFullYear()} IntegraSaúde</p>
+          {/* Grupo Laudos.AI section */}
+          <div className="flex flex-col md:flex-row justify-between items-center gap-4 pt-6 border-t border-gray-100">
+            <div className="flex items-center gap-6 text-sm text-gray-400">
+              <span>Produtos do Grupo Laudos.AI:</span>
+              <a href="https://laudos.ai" className="hover:text-[#FF6B00] font-medium">
+                Editor
+              </a>
+              <a href="https://crit.laudos.ai" className="hover:text-[#FF6B00] font-medium">
+                CRIT
+              </a>
+              <span className="text-[#FF6B00] font-medium">INTEGRA</span>
+            </div>
+            <p className="text-sm text-gray-400">
+              © {new Date().getFullYear()} INTEGRA por Grupo Laudos.AI
+            </p>
+          </div>
         </div>
       </div>
     </footer>

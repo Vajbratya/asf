@@ -1,7 +1,7 @@
 {
-  "name": "@integrabrasil/hl7-parser",
+  "name": "@integra/hl7-parser",
   "version": "1.0.0",
-  "description": "Complete HL7 v2 parser with FHIR transformation and MLLP support for Brazilian healthcare",
+  "description": "INTEGRA by Laudos.AI - HL7 v2 parser with FHIR transformation and MLLP support for Brazilian healthcare",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {

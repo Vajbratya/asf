@@ -1,9 +1,9 @@
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'IntegraSaúde - Integração HL7 e FHIR para Hospitais Brasileiros',
+  title: 'INTEGRA by Laudos.AI - Integração HL7 e FHIR para Hospitais Brasileiros',
   description:
-    'Plataforma de integração que conecta Tasy, MV Soul, Pixeon e outros sistemas de saúde usando padrões HL7 e FHIR R4. Comece gratuitamente.',
+    'Plataforma de integração que conecta Tasy, MV Soul, Pixeon e outros sistemas de saúde usando padrões HL7 e FHIR R4. Por Grupo Laudos.AI.',
   keywords: [
     'HL7',
     'FHIR',
@@ -15,10 +15,13 @@ export const metadata: Metadata = {
     'saúde',
     'Brasil',
     'RNDS',
+    'Laudos.AI',
+    'INTEGRA',
   ],
   openGraph: {
-    title: 'IntegraSaúde - Integração HL7 e FHIR para Hospitais',
-    description: 'Conecte seus sistemas hospitalares em minutos, não em semanas.',
+    title: 'INTEGRA by Laudos.AI - Integração HL7 e FHIR para Hospitais',
+    description:
+      'Conecte seus sistemas hospitalares em minutos, não em semanas. Por Grupo Laudos.AI.',
     type: 'website',
     locale: 'pt_BR',
   },

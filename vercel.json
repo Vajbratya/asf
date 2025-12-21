@@ -7,7 +7,7 @@
       "use": "@vercel/next",
       "config": {
         "installCommand": "cd ../.. && pnpm install",
-        "buildCommand": "cd ../.. && pnpm turbo build --filter=@integrasaude/web..."
+        "buildCommand": "cd ../.. && pnpm turbo build --filter=@integra/web..."
       }
     }
   ],

@@ -8,7 +8,7 @@ const navSections = [
   {
     title: 'Primeiros Passos',
     items: [
-      { slug: 'introducao', title: 'Introducao' },
+      { slug: 'introducao', title: 'Introdução' },
       { slug: 'criando-conta', title: 'Criando sua Conta' },
       { slug: 'conectores', title: 'Configurando Conectores' },
       { slug: 'primeira-mensagem', title: 'Primeira Mensagem' },
@@ -20,13 +20,13 @@ const navSections = [
       { slug: 'conectores/tasy', title: 'Tasy' },
       { slug: 'conectores/mv-soul', title: 'MV Soul' },
       { slug: 'conectores/pixeon', title: 'Pixeon' },
-      { slug: 'conectores/hl7-generico', title: 'HL7 Generico' },
+      { slug: 'conectores/hl7-generico', title: 'HL7 Genérico' },
     ],
   },
   {
-    title: 'API Reference',
+    title: 'Referência da API',
     items: [
-      { slug: 'api/autenticacao', title: 'Autenticacao' },
+      { slug: 'api/autenticacao', title: 'Autenticação' },
       { slug: 'api/mensagens', title: 'Mensagens' },
       { slug: 'api/conectores', title: 'Conectores' },
       { slug: 'api/webhooks', title: 'Webhooks' },
@@ -35,7 +35,7 @@ const navSections = [
   {
     title: 'HL7 v2',
     items: [
-      { slug: 'hl7/overview', title: 'Overview' },
+      { slug: 'hl7/overview', title: 'Visão Geral' },
       { slug: 'hl7/adt', title: 'Mensagens ADT' },
       { slug: 'hl7/orm', title: 'Mensagens ORM' },
       { slug: 'hl7/oru', title: 'Mensagens ORU' },
@@ -44,14 +44,14 @@ const navSections = [
   {
     title: 'FHIR R4',
     items: [
-      { slug: 'fhir/overview', title: 'Overview' },
+      { slug: 'fhir/overview', title: 'Visão Geral' },
       { slug: 'fhir/patient', title: 'Patient' },
       { slug: 'fhir/encounter', title: 'Encounter' },
       { slug: 'fhir/br-core', title: 'BR-Core Profiles' },
     ],
   },
   {
-    title: 'Seguranca',
+    title: 'Segurança',
     items: [
       { slug: 'seguranca/lgpd', title: 'LGPD' },
       { slug: 'seguranca/criptografia', title: 'Criptografia' },
@@ -77,10 +77,10 @@ export default function DocsClient({ slug, doc }: DocsClientProps) {
     return (
       <main className="min-h-screen bg-white pt-20">
         <div className="max-w-4xl mx-auto px-4 py-16 text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">Pagina nao encontrada</h1>
-          <p className="text-gray-600 mb-8">A documentacao que voce procura nao existe.</p>
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">Página não encontrada</h1>
+          <p className="text-gray-600 mb-8">A documentação que você procura não existe.</p>
           <Link href="/docs" className="text-gray-600 hover:underline">
-            ← Voltar para Documentacao
+            ← Voltar para Documentação
           </Link>
         </div>
       </main>
@@ -175,7 +175,7 @@ export default function DocsClient({ slug, doc }: DocsClientProps) {
           <article className="flex-1 min-w-0">
             <div className="mb-8">
               <Link href="/docs" className="text-sm text-gray-500 hover:text-gray-700">
-                ← Documentacao
+                ← Documentação
               </Link>
             </div>
 
